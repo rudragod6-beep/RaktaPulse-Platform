@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Donors - RaktaPulse{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="brand-font mb-1">Blood Donors</h2>
+            <p class="text-secondary">Find and connect with blood donors in your community.</p>
+        </div>
+    </div>
+
+    <div class="glass-card mb-4">
+        <form method="GET" id="donorFilterForm" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <select name="blood_group" class="form-select bg-light border-secondary text-dark">
+                    <option value="">All Blood Groups</option>
+                    {% for group in blood_groups %}
+                    <option value="{{ group }}" {% if request.GET.blood_group == group %}selected{% endif %}>{{ group }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="district" class="form-control bg-light border-secondary text-dark" 
+                       placeholder="Search district (e.g. Kathmandu)..." value="{{ request.GET.district }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-danger w-100 shadow-sm">Filter</button>
+            </div>
+            <div class="col-md-2">
+                <button type="button" id="findNearestBtn" class="btn btn-primary w-100 shadow-sm">
+                    <i class="bi bi-geo-alt-fill me-1"></i> Nearest
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'donor_list' %}" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
+            <input type="hidden" name="lat" id="latInput" value="{{ request.GET.lat }}">
+            <input type="hidden" name="lng" id="lngInput" value="{{ request.GET.lng }}">
+        </form>
+
+        <div class="donor-list">
+            {% for donor in donors %}
+            <div class="donor-row d-flex align-items-center justify-content-between flex-wrap gap-3 p-3 mb-3 border rounded bg-light">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-danger bg-opacity-10 text-danger rounded p-2 fw-bold" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;">
+                        {{ donor.blood_group }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold text-dark">
+                            {{ donor.name }}
+                            {% if donor.is_verified %}
+                            <span class="ms-1" title="Verified Donor"><i class="bi bi-patch-check-fill text-success"></i></span>
+                            {% endif %}
+                            {% if donor.distance and donor.distance < 1000 %}
+                            <span class="ms-2 badge bg-info bg-opacity-10 text-info" style="font-size: 0.7rem;">
+                                <i class="bi bi-distribute-vertical me-1"></i> {{ donor.distance|floatformat:1 }} km away
+                            </span>
+                            {% endif %}
+                        </h6>
+                        <p class="mb-0 text-secondary small"><i class="bi bi-geo-alt me-1"></i> {{ donor.location }}, {{ donor.district }}</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-4">
+                    <div class="text-end d-none d-sm-block">
+                        <span class="badge {% if donor.is_available %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10 text-{% if donor.is_available %}success{% else %}secondary{% endif %} mb-1">
+                            {% if donor.is_available %}Available{% else %}Unavailable{% endif %}
+                        </span>
+                        <p class="mb-0 text-muted extra-small" style="font-size: 0.7rem;">Phone: {{ donor.phone }}</p>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm px-3 rounded-pill" onclick="alert('Contacting {{ donor.name }} at {{ donor.phone }}...')">Contact Now</button>
+                </div>
+            </div>
+            {% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('findNearestBtn').addEventListener('click', function() {
+        const btn = this;
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Locating...';
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                document.getElementById('latInput').value = position.coords.latitude;
+                document.getElementById('lngInput').value = position.coords.longitude;
+                document.getElementById('donorFilterForm').submit();
+            }, function(error) {
+                alert("Error getting location: " + error.message);
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    });
+</script>
+{% endblock %}

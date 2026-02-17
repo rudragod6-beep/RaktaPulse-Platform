@@ -1,25 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <title>{% block title %}Knowledge Base{% endblock %}</title>
-  {% if project_description %}
-  <meta name="description" content="{{ project_description }}">
-  <meta property="og:description" content="{{ project_description }}">
-  <meta property="twitter:description" content="{{ project_description }}">
-  {% endif %}
-  {% if project_image_url %}
-  <meta property="og:image" content="{{ project_image_url }}">
-  <meta property="twitter:image" content="{{ project_image_url }}">
-  {% endif %}
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/custom.css' %}?v={{ deployment_timestamp }}">
-  {% block head %}{% endblock %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RaktaPulse Dashboard{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root {
+            --dark-bg: #f8f9fa;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --pulse-red: #E63946;
+            --pulse-red-light: #fff5f5;
+            --pulse-red-glow: rgba(230, 57, 70, 0.1);
+            --text-primary: #2b2d42;
+            --text-secondary: #6c757d;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --sidebar-width: 260px;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .blinking-logo {
+            animation: blink 1.5s infinite ease-in-out;
+            display: inline-block;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* F-Shape Layout */
+        .wrapper {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        /* Sidebar (Vertical stroke of F) */
+        #sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            border-right: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        #sidebar.collapsed {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        .sidebar-header {
+            padding: 30px 25px;
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-menu {
+            padding: 0;
+            list-style: none;
+        }
+
+        .sidebar-menu li a {
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar-menu li a:hover, .sidebar-menu li.active a {
+            color: var(--pulse-red);
+            background: var(--pulse-red-light);
+            border-left-color: var(--pulse-red);
+        }
+
+        .sidebar-menu li a i {
+            margin-right: 15px;
+            font-size: 1.2rem;
+        }
+
+        /* Content Area */
+        #content {
+            width: calc(100% - var(--sidebar-width));
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+
+        #content.expanded {
+            width: 100%;
+            margin-left: 0;
+        }
+
+        /* Top Bar (Horizontal stroke 1 of F) */
+        .top-bar {
+            height: 70px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .search-box {
+            background: #f1f3f5;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px 15px;
+            display: flex;
+            align-items: center;
+            width: 300px;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding-left: 10px;
+            width: 100%;
+        }
+
+        .search-box input:focus {
+            outline: none;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            #sidebar { margin-left: calc(-1 * var(--sidebar-width)); }
+            #content { width: 100%; margin-left: 0; }
+            #sidebar.active { margin-left: 0; }
+        }
+
+        {% block head %}{% endblock %}
+    </style>
 </head>
-
 <body>
-  {% block content %}{% endblock %}
-</body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="text-decoration-none d-flex align-items-center">
+                    <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-2 blinking-logo" style="width: 35px; height: 35px;">
+                        <i class="bi bi-droplet-fill text-white"></i>
+                    </div>
+                    <span class="fs-4 fw-bold text-danger brand-font">RaktaPulse</span>
+                </a>
+            </div>
+            
+            <ul class="sidebar-menu mt-4">
+                <li class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}"><a href="{% url 'home' %}"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a></li>
+                <li class="{% if request.resolver_match.url_name == 'donor_list' %}active{% endif %}"><a href="{% url 'donor_list' %}"><i class="bi bi-people-fill"></i> Donors</a></li>
+                <li class="{% if request.resolver_match.url_name == 'blood_request_list' %}active{% endif %}"><a href="{% url 'blood_request_list' %}"><i class="bi bi-megaphone-fill"></i> Blood Requests</a></li>
+                <li class="{% if request.resolver_match.url_name == 'blood_bank_list' %}active{% endif %}"><a href="{% url 'blood_bank_list' %}"><i class="bi bi-hospital-fill"></i> Blood Banks</a></li>
+                <li class="{% if request.resolver_match.url_name == 'vaccination_info' %}active{% endif %}"><a href="{% url 'vaccination_info' %}"><i class="bi bi-shield-check"></i> Vaccination</a></li>
+                <li><a href="/admin/"><i class="bi bi-gear-fill"></i> Settings</a></li>
+            </ul>
 
+            <div class="position-absolute bottom-0 w-100 p-4">
+                <div class="glass-card p-3 bg-opacity-10 border-danger border-opacity-25" style="background: rgba(230, 57, 70, 0.05);">
+                    <p class="small text-secondary mb-2">Need Help?</p>
+                    <a href="tel:911" class="btn btn-sm btn-danger w-100 fw-bold">Emergency: 911</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Top Bar -->
+            <div class="top-bar justify-content-between">
+                <div class="d-flex align-items-center">
+                    <button type="button" id="sidebarCollapse" class="btn btn-link text-danger me-3 p-0">
+                        <i class="bi bi-list fs-3"></i>
+                    </button>
+                    <div class="search-box d-none d-sm-flex">
+                        <i class="bi bi-search text-secondary"></i>
+                        <input type="text" placeholder="Search anything...">
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center gap-4">
+                    <div class="d-none d-md-flex align-items-center text-secondary small">
+                        <i class="bi bi-calendar3 me-2"></i>
+                        {{ current_time|date:"D, M d, Y" }}
+                    </div>
+                    {% if user.is_authenticated %}
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="d-none d-sm-inline fw-bold text-dark">{{ user.username }}</span>
+                        <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+                    </div>
+                    {% else %}
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="/login" class="btn btn-danger btn-sm px-3">Login</a>
+                        <a href="/register" class="btn btn-outline-danger btn-sm px-3">Register</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="p-4 p-md-5">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.getElementById('sidebarCollapse').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('content').classList.toggle('expanded');
+            
+            // For mobile view, handle the 'active' class as well if needed
+            if (window.innerWidth <= 992) {
+                document.getElementById('sidebar').classList.toggle('active');
+            }
+        });
+
+        // Active class is handled server-side via Django templates.
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
 </html>

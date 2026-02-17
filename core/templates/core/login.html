@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - RaktaPulse{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-5">
+        <div class="glass-card shadow-sm border-danger border-opacity-10">
+            <div class="text-center mb-4">
+                <div class="bg-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3 blinking-logo" style="width: 60px; height: 60px;">
+                    <i class="bi bi-droplet-fill text-white fs-2"></i>
+                </div>
+                <h2 class="fw-bold text-danger brand-font">Welcome to RaktaPulse</h2>
+                <p class="text-secondary">Please login to your account</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary text-uppercase">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn btn-danger w-100 py-2 fw-bold mt-3">LOGIN</button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <p class="text-secondary small">Don't have an account? <a href="{% url 'register' %}" class="text-danger fw-bold text-decoration-none">Register here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #f8f9fa;
+        background-clip: padding-box;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+    input:focus {
+        border-color: #E63946;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(230, 57, 70, 0.1);
+    }
+</style>
+{% endblock %}

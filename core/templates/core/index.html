@@ -1,145 +1,382 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}{{ project_name }}{% endblock %}
+{% block title %}RaktaPulse Dashboard - Lifeline of the Community{% endblock %}
 
 {% block head %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg-color-start: #6a11cb;
-    --bg-color-end: #2575fc;
-    --text-color: #ffffff;
-    --card-bg-color: rgba(255, 255, 255, 0.01);
-    --card-border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(45deg, var(--bg-color-start), var(--bg-color-end));
-    color: var(--text-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    text-align: center;
-    overflow: hidden;
-    position: relative;
-  }
-
-  body::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><path d='M-10 10L110 10M10 -10L10 110' stroke-width='1' stroke='rgba(255,255,255,0.05)'/></svg>");
-    animation: bg-pan 20s linear infinite;
-    z-index: -1;
-  }
-
-  @keyframes bg-pan {
-    0% {
-      background-position: 0% 0%;
+    .stat-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    .stat-card .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: 'Outfit', sans-serif;
+    }
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .blood-group-pill {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(230, 57, 70, 0.1);
+        color: var(--pulse-red);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
     }
 
-    100% {
-      background-position: 100% 100%;
+    .donor-row {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border: 1px solid #eee;
+        transition: all 0.3s;
     }
-  }
-
-  main {
-    padding: 2rem;
-  }
-
-  .card {
-    background: var(--card-bg-color);
-    border: 1px solid var(--card-border-color);
-    border-radius: 16px;
-    padding: 2.5rem 2rem;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
-  }
-
-  h1 {
-    font-size: clamp(2.2rem, 3vw + 1.2rem, 3.2rem);
-    font-weight: 700;
-    margin: 0 0 1.2rem;
-    letter-spacing: -0.02em;
-  }
-
-  p {
-    margin: 0.5rem 0;
-    font-size: 1.1rem;
-    opacity: 0.92;
-  }
-
-  .loader {
-    margin: 1.5rem auto;
-    width: 56px;
-    height: 56px;
-    border: 4px solid rgba(255, 255, 255, 0.25);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
+    .donor-row:hover {
+        border-color: var(--pulse-red);
+        background: var(--pulse-red-light);
     }
-  }
 
-  .runtime code {
-    background: rgba(0, 0, 0, 0.25);
-    padding: 0.15rem 0.45rem;
-    border-radius: 4px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
+    .urgency-badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .bg-critical { background: #FF4D4D; color: #fff; }
+    .bg-urgent { background: #FFA500; color: #000; }
+    .bg-normal { background: #4CAF50; color: #fff; }
 
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
-  }
+    .progress {
+        background-color: #2A2A2A;
+        border-radius: 10px;
+    }
+    
+    .vaccination-card {
+        background: linear-gradient(135deg, #E63946 0%, #d62828 100%);
+        border-radius: 20px;
+        padding: 25px;
+        color: white !important;
+    }
 
-  footer {
-    position: absolute;
-    bottom: 1rem;
-    width: 100%;
-    text-align: center;
-    font-size: 0.85rem;
-    opacity: 0.75;
-  }
+    .filter-btn {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+    }
+    .filter-btn.active {
+        background: var(--pulse-red);
+        border-color: var(--pulse-red);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<main>
-  <div class="card">
-    <h1>Analyzing your requirements and generating your app…</h1>
-    <div class="loader" role="status" aria-live="polite" aria-label="Applying initial changes">
-      <span class="sr-only">Loading…</span>
+<div class="container-fluid p-0">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="brand-font mb-1">RaktaPulse Community Dashboard</h2>
+            <p class="text-secondary">Overview of blood donation activity and requirements in your area.</p>
+        </div>
     </div>
-    <p class="hint">AppWizzy AI is collecting your requirements and applying the first changes.</p>
-    <p class="hint">This page will refresh automatically as the plan is implemented.</p>
-    <p class="runtime">
-      Runtime: Django <code>{{ django_version }}</code> · Python <code>{{ python_version }}</code>
-      — UTC <code>{{ current_time|date:"Y-m-d H:i:s" }}</code>
-    </p>
-  </div>
-</main>
-<footer>
-  Page updated: {{ current_time|date:"Y-m-d H:i:s" }} (UTC)
-</footer>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="stat-value">{{ stats.total_donors }}</div>
+                <div class="stat-label">Registered Donors</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-activity"></i>
+                </div>
+                <div class="stat-value">{{ stats.active_requests }}</div>
+                <div class="stat-label">Active Requests</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-droplet"></i>
+                </div>
+                <div class="stat-value">{{ stats.total_stock }} <small class="fs-6 fw-normal">Units</small></div>
+                <div class="stat-label">Bank Inventory</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="icon-box bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="stat-value">{{ stats.vaccinated_percentage }}%</div>
+                <div class="stat-label">Vaccinated Donors</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Donor Search & Grid -->
+        <div class="col-lg-8">
+            <div class="glass-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0 brand-font">Available Donors</h4>
+                    <div class="d-flex gap-2">
+                        <button class="filter-btn active" id="btn-list">List View</button>
+                        <button class="filter-btn" id="btn-map">Map View</button>
+                        <button class="filter-btn" id="btn-nearest">Nearest First</button>
+                    </div>
+                </div>
+
+                <div id="map-container" style="display: none; height: 400px; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid var(--border-color);">
+                    <div id="map" style="height: 100%;"></div>
+                </div>
+
+                <form method="GET" id="donorHomeFilterForm" class="row g-3 mb-4">
+                    <div class="col-md-5">
+                        <select name="blood_group" class="form-select bg-light border-secondary text-dark">
+                            <option value="">All Blood Groups</option>
+                            {% for group in blood_groups %}
+                            <option value="{{ group }}" {% if request.GET.blood_group == group %}selected{% endif %}>{{ group }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="location" class="form-control bg-light border-secondary text-dark" 
+                               placeholder="Search location (e.g. Kathmandu)..." value="{{ request.GET.location }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-danger w-100 shadow-sm">Find</button>
+                    </div>
+                    <input type="hidden" name="lat" id="latInputHome" value="{{ request.GET.lat }}">
+                    <input type="hidden" name="lng" id="lngInputHome" value="{{ request.GET.lng }}">
+                </form>
+
+                <div class="donor-list">
+                    {% for donor in donors %}
+                    <div class="donor-row d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="blood-group-pill">{{ donor.blood_group }}</div>
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark">
+                                    {{ donor.name }}
+                                    {% if donor.is_verified %}
+                                    <span class="ms-1" title="Verified Donor"><i class="bi bi-patch-check-fill text-success"></i></span>
+                                    {% endif %}
+                                    {% if donor.distance and donor.distance < 1000 %}
+                                    <span class="ms-2 badge bg-info bg-opacity-10 text-info" style="font-size: 0.65rem;">
+                                        {{ donor.distance|floatformat:1 }} km
+                                    </span>
+                                    {% endif %}
+                                </h6>
+                                <p class="mb-0 text-secondary small"><i class="bi bi-geo-alt me-1"></i> {{ donor.location }}, {{ donor.district }}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-4">
+                            <div class="text-end d-none d-sm-block">
+                                <span class="badge {% if donor.is_available %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10 text-{% if donor.is_available %}success{% else %}secondary{% endif %} mb-1">
+                                    {% if donor.is_available %}Available{% else %}Unavailable{% endif %}
+                                </span>
+                                <p class="mb-0 text-muted extra-small" style="font-size: 0.7rem;">Last Donated: {{ donor.last_donation_date|default:"Never" }}</p>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm px-3 rounded-pill" onclick="alert('Initiating contact with {{ donor.name }}...')">Contact</button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-search fs-1 text-secondary opacity-25"></i>
+                        <p class="text-secondary mt-3">No donors match your search criteria.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Vaccination Monitoring Section -->
+            <div class="vaccination-card">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <h4 class="brand-font text-white mb-2">Vaccination & Eligibility</h4>
+                        <p class="text-secondary small">We prioritize donors who are fully vaccinated to ensure maximum safety for recipients.</p>
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between small text-white mb-2">
+                                <span>Community Immunity Level</span>
+                                <span>{{ stats.vaccinated_percentage }}%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-success" style="width: {{ stats.vaccinated_percentage }}%"></div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success btn-sm px-4">Update Status</button>
+                    </div>
+                    <div class="col-md-5 d-none d-md-block text-center">
+                        <i class="bi bi-shield-plus text-success" style="font-size: 5rem; opacity: 0.2;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Components -->
+        <div class="col-lg-4">
+            <!-- Urgent Requests -->
+            <div class="glass-card mb-4 border-start border-danger border-4">
+                <h5 class="brand-font mb-4 d-flex justify-content-between align-items-center">
+                    Urgent Requests
+                    <span class="badge bg-danger rounded-pill px-2" style="font-size: 0.6rem;">HOT</span>
+                </h5>
+                <div class="request-feed">
+                    {% for req in blood_requests %}
+                    <div class="mb-4 border-bottom border-light pb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="urgency-badge bg-{{ req.urgency|lower }}">{{ req.urgency }}</span>
+                            <span class="fw-bold text-danger">{{ req.blood_group }}</span>
+                        </div>
+                        <h6 class="mb-1 text-dark">{{ req.patient_name }}</h6>
+                        <p class="text-secondary extra-small mb-2"><i class="bi bi-hospital me-1"></i> {{ req.hospital }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted" style="font-size: 0.7rem;">{{ req.created_at|timesince }} ago</small>
+                            <a href="#" class="btn btn-link text-danger p-0 text-decoration-none small">Help Now →</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-secondary text-center">No active requests found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Blood Bank Inventory -->
+            <div class="glass-card">
+                <h5 class="brand-font mb-4">Blood Bank Inventory</h5>
+                <div class="inventory-list">
+                    {% for bank in blood_banks %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold text-dark">{{ bank.name }}</span>
+                            <span class="small text-secondary">24/7 Available</span>
+                        </div>
+                        <div class="d-flex gap-1 flex-wrap">
+                            <span class="badge bg-dark border border-secondary text-secondary extra-small" style="font-size: 0.65rem;">A+ : {{ bank.stock_a_plus }}</span>
+                            <span class="badge bg-dark border border-secondary text-secondary extra-small" style="font-size: 0.65rem;">B+ : {{ bank.stock_b_plus }}</span>
+                            <span class="badge bg-dark border border-secondary text-secondary extra-small" style="font-size: 0.65rem;">O+ : {{ bank.stock_o_plus }}</span>
+                            <span class="badge bg-dark border border-secondary text-secondary extra-small" style="font-size: 0.65rem;">AB+ : {{ bank.stock_ab_plus }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-secondary text-center">No blood banks registered.</p>
+                    {% endfor %}
+                </div>
+                <a href="/admin/core/bloodbank/" class="btn btn-outline-secondary w-100 btn-sm mt-3">Manage Banks</a>
+            </div>
+
+            <!-- Extra Feature: Community Tip -->
+            <div class="glass-card mt-4 bg-gradient" style="background: linear-gradient(135deg, #1e1e1e 0%, #2d1b1b 100%);">
+                <h6 class="text-danger mb-2"><i class="bi bi-lightbulb me-2"></i>Lifesaver Tip</h6>
+                <p class="small text-secondary mb-0">Donating once can save up to three lives. Make sure to stay hydrated and rest before your appointment!</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const btnList = document.getElementById('btn-list');
+    const btnMap = document.getElementById('btn-map');
+    const mapContainer = document.getElementById('map-container');
+    const donorList = document.querySelector('.donor-list');
+    let map;
+
+    btnMap.addEventListener('click', () => {
+        btnMap.classList.add('active');
+        btnList.classList.remove('active');
+        mapContainer.style.display = 'block';
+        donorList.style.display = 'none';
+        
+        if (!map) {
+            initMap();
+        } else {
+            // Need to invalidate size if it was hidden when initialized
+            setTimeout(() => { map.invalidateSize(); }, 200);
+        }
+    });
+
+    btnList.addEventListener('click', () => {
+        btnList.classList.add('active');
+        btnMap.classList.remove('active');
+        mapContainer.style.display = 'none';
+        donorList.style.display = 'block';
+    });
+
+    const btnNearest = document.getElementById('btn-nearest');
+
+    btnNearest.addEventListener('click', () => {
+        const btn = btnNearest;
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                document.getElementById('latInputHome').value = position.coords.latitude;
+                document.getElementById('lngInputHome').value = position.coords.longitude;
+                document.getElementById('donorHomeFilterForm').submit();
+            }, function(error) {
+                alert("Error getting location: " + error.message);
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    });
+
+    function initMap() {
+        map = L.map('map').setView([27.7172, 85.3240], 12); // Centered on Kathmandu
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add dummy markers for donors
+        {% for donor in donors %}
+            // Randomly offset from center for demo (within Nepal context)
+            L.marker([27.7172 + (Math.random() - 0.5) * 0.1, 85.3240 + (Math.random() - 0.5) * 0.1])
+                .addTo(map)
+                .bindPopup("<b>{{ donor.name }}</b><br>{{ donor.blood_group }} - {{ donor.location }}");
+        {% endfor %}
+    }
+</script>
 {% endblock %}

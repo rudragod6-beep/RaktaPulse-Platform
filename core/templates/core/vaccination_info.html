@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Vaccination Status - RaktaPulse{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="brand-font mb-1">Vaccination Overview</h2>
+            <p class="text-secondary">Monitoring community immunity and donor eligibility.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="glass-card mb-4">
+                <h4 class="brand-font mb-4 text-dark">Why Vaccination Matters?</h4>
+                <p>Ensuring our donors are vaccinated is crucial for the safety of both the donors and the recipients. Fully vaccinated individuals contribute to a safer blood supply chain.</p>
+                
+                <div class="p-4 bg-light rounded border mb-4">
+                    <h5 class="fw-bold mb-3">Community Progress</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Fully Vaccinated Donors</span>
+                        <span class="fw-bold text-success">{{ stats.percentage }}%</span>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: {{ stats.percentage }}%">{{ stats.percentage }}%</div>
+                    </div>
+                    <p class="small text-muted mt-2">{{ stats.vaccinated_count }} out of {{ stats.total_donors }} registered donors are fully vaccinated.</p>
+                </div>
+
+                <h5 class="fw-bold mb-3">Eligibility Criteria</h5>
+                <ul class="list-group list-group-flush mb-4 bg-transparent">
+                    <li class="list-group-item bg-transparent border-light"><i class="bi bi-check-circle-fill text-success me-2"></i> Must be fully vaccinated for priority donation.</li>
+                    <li class="list-group-item bg-transparent border-light"><i class="bi bi-check-circle-fill text-success me-2"></i> At least 14 days must have passed since the last dose.</li>
+                    <li class="list-group-item bg-transparent border-light"><i class="bi bi-check-circle-fill text-success me-2"></i> Must be in good health on the day of donation.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="glass-card bg-danger bg-opacity-10 border-danger border-opacity-25">
+                <h5 class="text-danger fw-bold mb-3">Update Your Status</h5>
+                <p class="small text-secondary">Are you a donor? Keep your vaccination records up to date to maintain your verified status.</p>
+                <button class="btn btn-danger w-100 rounded-pill">Upload Certificate</button>
+            </div>
+            
+            <div class="glass-card mt-4">
+                <h5 class="fw-bold mb-3">Contact Support</h5>
+                <p class="small text-secondary">Have questions about vaccination and donation? Our medical team is here to help.</p>
+                <a href="mailto:support@raktapulse.com" class="btn btn-outline-secondary w-100 rounded-pill">Email Support</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
