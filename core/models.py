@@ -1,5 +1,19 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
+
+class VaccineRecord(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vaccine_records')
+    vaccine_name = models.CharField(max_length=100)
+    dose_number = models.PositiveIntegerField(default=1)
+    date_taken = models.DateField()
+    location = models.CharField(max_length=255)
+    center_name = models.CharField(max_length=255, null=True, blank=True)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vaccine_name} - Dose {self.dose_number} for {self.user.username}"
 
 class Donor(models.Model):
     BLOOD_GROUPS = [
@@ -38,6 +52,8 @@ class BloodRequest(models.Model):
     location = models.CharField(max_length=255)
     urgency = models.CharField(max_length=10, choices=URGENCY_LEVELS, default='NORMAL')
     hospital = models.CharField(max_length=255)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     contact_number = models.CharField(max_length=20)
     required_date = models.DateField(default=timezone.now)
     status = models.CharField(max_length=20, default='Active')
@@ -49,6 +65,8 @@ class BloodRequest(models.Model):
 class BloodBank(models.Model):
     name = models.CharField(max_length=100)
     location = models.CharField(max_length=255)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     contact_number = models.CharField(max_length=20, null=True, blank=True)
     is_24_7 = models.BooleanField(default=True)
     stock_a_plus = models.IntegerField(default=0)

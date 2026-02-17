@@ -1,38 +1,30 @@
 {% extends 'base.html' %}
 
-{% block title %}Login - RaktaPulse{% endblock %}
+{% block title %}Create Account - RaktaPulse{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center align-items-center py-5" style="min-height: 80vh;">
-    <div class="col-md-5">
+    <div class="col-md-6 col-lg-5">
         <div class="glass-card shadow-lg border-danger border-opacity-10 p-4 p-md-5">
             <div class="text-center mb-5">
                 <div class="bg-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-4 blinking-logo shadow-danger" style="width: 70px; height: 70px; box-shadow: 0 0 20px rgba(230, 57, 70, 0.3);">
-                    <i class="bi bi-droplet-fill text-white fs-1"></i>
+                    <i class="bi bi-person-plus-fill text-white fs-1"></i>
                 </div>
-                <h2 class="fw-bold text-danger brand-font mb-2">Welcome Back</h2>
-                <p class="text-secondary">Enter your credentials to access RaktaPulse</p>
+                <h2 class="fw-bold text-danger brand-font mb-2">Join RaktaPulse</h2>
+                <p class="text-secondary">Be a hero. Start saving lives today.</p>
             </div>
             
-            {% if form.non_field_errors %}
-            <div class="alert alert-danger border-0 rounded-3 mb-4 small">
-                {% for error in form.non_field_errors %}
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    {{ error }}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
             <form method="post" class="needs-validation">
                 {% csrf_token %}
                 {% for field in form %}
-                <div class="mb-4">
+                <div class="mb-3">
                     <label class="form-label small fw-bold text-secondary text-uppercase mb-2" for="{{ field.id_for_label }}">
-                        <i class="bi bi-{% if 'username' in field.name %}person{% else %}key{% endif %} me-1"></i> {{ field.label }}
+                        {{ field.label }}
                     </label>
                     {{ field }}
+                    {% if field.help_text %}
+                    <div class="form-text small mb-1">{{ field.help_text|safe }}</div>
+                    {% endif %}
                     {% if field.errors %}
                     <div class="text-danger small mt-1">
                         {% for error in field.errors %}{{ error }}{% endfor %}
@@ -41,21 +33,13 @@
                 </div>
                 {% endfor %}
                 
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="rememberMe">
-                        <label class="form-check-label small text-secondary" for="rememberMe">Remember me</label>
-                    </div>
-                    <a href="#" class="text-danger small text-decoration-none fw-500">Forgot password?</a>
-                </div>
-
-                <button type="submit" class="btn btn-danger w-100 py-3 fw-bold mt-2 shadow-sm">
-                    LOG IN <i class="bi bi-arrow-right-short ms-1"></i>
+                <button type="submit" class="btn btn-danger w-100 py-3 fw-bold mt-4 shadow-sm">
+                    CREATE ACCOUNT <i class="bi bi-check-circle ms-1"></i>
                 </button>
             </form>
             
             <div class="text-center mt-5">
-                <p class="text-secondary small mb-4">Don't have an account? <a href="{% url 'register' %}" class="text-danger fw-bold text-decoration-none">Create one now</a></p>
+                <p class="text-secondary small mb-4">Already have an account? <a href="{% url 'login' %}" class="text-danger fw-bold text-decoration-none">Log in here</a></p>
                 <hr class="opacity-10 mb-4">
                 <a href="{% url 'home' %}" class="btn btn-link btn-sm text-secondary text-decoration-none">
                     <i class="bi bi-house-door me-1"></i> Back to Home
@@ -91,9 +75,15 @@
         border-radius: 24px;
         border: 1px solid rgba(0,0,0,0.05);
     }
-    .fw-500 { font-weight: 500; }
     .shadow-danger {
         box-shadow: 0 10px 20px rgba(230, 57, 70, 0.2);
+    }
+    .helptext ul {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 5px;
+        color: #6c757d;
+        font-size: 0.8rem;
     }
 </style>
 {% endblock %}

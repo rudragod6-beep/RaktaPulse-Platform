@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-map text-danger"></i> Live Alert Map</h2>
+        <span class="badge bg-danger pulse">LIVE UPDATES</span>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div id="live-map" style="height: 600px; width: 100%; border-radius: 8px;"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Recent Alerts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Blood Group</th>
+                                    <th>Hospital</th>
+                                    <th>Urgency</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in requests %}
+                                <tr>
+                                    <td>{{ req.patient_name }}</td>
+                                    <td><span class="badge bg-danger">{{ req.blood_group }}</span></td>
+                                    <td>{{ req.hospital }}</td>
+                                    <td>
+                                        {% if req.urgency == 'CRITICAL' %}
+                                            <span class="badge bg-dark">CRITICAL</span>
+                                        {% elif req.urgency == 'URGENT' %}
+                                            <span class="badge bg-warning text-dark">URGENT</span>
+                                        {% else %}
+                                            <span class="badge bg-info">NORMAL</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="focusOnMarker({{ req.latitude }}, {{ req.longitude }})">
+                                            <i class="bi bi-eye"></i> View on Map
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No active alerts found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pulse {
+        animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+</style>
+
+<script>
+    var map;
+    var markers = {};
+
+    function initMap() {
+        // Center on Kathmandu by default
+        map = L.map('live-map').setView([27.7172, 85.3240], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        {% for req in requests %}
+            {% if req.latitude and req.longitude %}
+                var markerColor = 'blue';
+                {% if req.urgency == 'CRITICAL' %}
+                    markerColor = 'red';
+                {% elif req.urgency == 'URGENT' %}
+                    markerColor = 'orange';
+                {% endif %}
+
+                var marker = L.circleMarker([{{ req.latitude }}, {{ req.longitude }}], {
+                    radius: 10,
+                    fillColor: markerColor,
+                    color: "#fff",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+
+                marker.bindPopup(`
+                    <strong>{{ req.patient_name }}</strong><br>
+                    Blood Group: <span class="badge bg-danger">{{ req.blood_group }}</span><br>
+                    Hospital: {{ req.hospital }}<br>
+                    Urgency: {{ req.urgency }}<br>
+                    <a href="tel:{{ req.contact_number }}" class="btn btn-sm btn-primary mt-2">Contact</a>
+                `);
+
+                markers["{{ req.id }}"] = marker;
+            {% endif %}
+        {% endfor %}
+    }
+
+    function focusOnMarker(lat, lng) {
+        map.setView([lat, lng], 16);
+        // Find marker at this location and open its popup if possible
+        // (Simplified for now)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.addEventListener('DOMContentLoaded', initMap);
+</script>
+{% endblock %}

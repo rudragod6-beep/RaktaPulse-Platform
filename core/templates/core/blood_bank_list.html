@@ -6,9 +6,19 @@
 {% block content %}
 <div class="container-fluid p-0">
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-md-8">
             <h2 class="brand-font mb-1">Blood Banks</h2>
             <p class="text-secondary">Official blood repositories and their current inventory levels.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <button type="button" id="findNearestBankBtn" class="btn btn-primary shadow-sm">
+                <i class="bi bi-geo-alt-fill me-1"></i> Nearest First
+            </button>
+            <a href="{% url 'blood_bank_list' %}" class="btn btn-outline-secondary ms-2">Reset</a>
+            <form id="bankFilterForm" method="GET" style="display:none;">
+                <input type="hidden" name="lat" id="latInputBank">
+                <input type="hidden" name="lng" id="lngInputBank">
+            </form>
         </div>
     </div>
 
@@ -16,14 +26,27 @@
         {% for bank in banks %}
         <div class="col-md-6 mb-4">
             <div class="glass-card h-100">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <h4 class="brand-font mb-0 text-dark">{{ bank.name }}</h4>
                     {% if bank.is_24_7 %}
                     <span class="badge bg-success bg-opacity-10 text-success">24/7 Available</span>
                     {% endif %}
                 </div>
-                <p class="text-secondary mb-4"><i class="bi bi-geo-alt me-2"></i> {{ bank.location }}</p>
-                <p class="text-secondary mb-4"><i class="bi bi-telephone me-2"></i> {{ bank.contact_number }}</p>
+                
+                {% if bank.distance and bank.distance < 1000 %}
+                <div class="mb-3">
+                    <span class="badge bg-info bg-opacity-10 text-info" style="font-size: 0.75rem;">
+                        <i class="bi bi-distribute-vertical me-1"></i> {{ bank.distance|floatformat:1 }} km away from you
+                    </span>
+                </div>
+                {% endif %}
+                
+                <p class="text-secondary mb-3"><i class="bi bi-geo-alt me-2"></i> {{ bank.location }}</p>
+                <p class="text-secondary mb-4">
+                    <a href="tel:{{ bank.contact_number }}" class="text-decoration-none text-secondary">
+                        <i class="bi bi-telephone me-2"></i> {{ bank.contact_number }}
+                    </a>
+                </p>
                 
                 <h6 class="fw-bold text-dark mb-3">Inventory Levels (Units)</h6>
                 <div class="row g-2 mb-4">
@@ -77,7 +100,7 @@
                     </div>
                 </div>
                 
-                <button class="btn btn-danger w-100 rounded-pill">Contact Bank</button>
+                <a href="tel:{{ bank.contact_number }}" class="btn btn-danger w-100 rounded-pill">Contact Bank</a>
             </div>
         </div>
         {% empty %}
@@ -88,4 +111,31 @@
         {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('findNearestBankBtn').addEventListener('click', function() {
+        const btn = this;
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Locating...';
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                document.getElementById('latInputBank').value = position.coords.latitude;
+                document.getElementById('lngInputBank').value = position.coords.longitude;
+                document.getElementById('bankFilterForm').submit();
+            }, function(error) {
+                alert("Error getting location: " + error.message);
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    });
+</script>
 {% endblock %}

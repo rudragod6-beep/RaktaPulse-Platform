@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Donor, BloodRequest, BloodBank
+from .models import Donor, BloodRequest, BloodBank, VaccineRecord
+
+@admin.register(VaccineRecord)
+class VaccineRecordAdmin(admin.ModelAdmin):
+    list_display = ('vaccine_name', 'user', 'dose_number', 'date_taken', 'location')
+    list_filter = ('vaccine_name', 'date_taken')
+    search_fields = ('vaccine_name', 'user__username', 'location')
 
 @admin.register(Donor)
 class DonorAdmin(admin.ModelAdmin):
