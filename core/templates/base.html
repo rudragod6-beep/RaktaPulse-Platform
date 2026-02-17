@@ -202,6 +202,7 @@
                 <li class="{% if request.resolver_match.url_name == 'live_map' %}active{% endif %}"><a href="{% url 'live_map' %}"><i class="bi bi-map text-danger"></i> Live Alerts</a></li>
                 <li class="{% if request.resolver_match.url_name == 'vaccination_info' %}active{% endif %}"><a href="{% url 'vaccination_info' %}"><i class="bi bi-shield-check"></i> Vaccination</a></li>
                 {% if user.is_authenticated %}
+                <li class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"><a href="{% url 'profile' %}"><i class="bi bi-person-bounding-box"></i> My Profile</a></li>
                 <li class="{% if 'vaccination_dashboard' in request.resolver_match.url_name or 'add_vaccination' in request.resolver_match.url_name %}active{% endif %}"><a href="{% url 'vaccination_dashboard' %}"><i class="bi bi-journal-check"></i> My Records</a></li>
                 {% endif %}
                 <li><a href="/admin/"><i class="bi bi-gear-fill"></i> Settings</a></li>
@@ -218,35 +219,40 @@
         <!-- Page Content -->
         <div id="content">
             <!-- Top Bar -->
-            <div class="top-bar justify-content-between">
+            <div class="top-bar justify-content-between flex-wrap">
                 <div class="d-flex align-items-center">
                     <button type="button" id="sidebarCollapse" class="btn btn-link text-danger me-3 p-0">
                         <i class="bi bi-list fs-3"></i>
                     </button>
-                    <div class="search-box d-none d-sm-flex">
+                    <div class="search-box d-none d-lg-flex">
                         <i class="bi bi-search text-secondary"></i>
                         <input type="text" placeholder="Search anything...">
                     </div>
                 </div>
                 
-                <div class="d-flex align-items-center gap-4">
-                    <div id="location-status" class="d-none d-md-flex align-items-center text-secondary small cursor-pointer" style="cursor: pointer;" onclick="detectLocation()">
-                        <i class="bi bi-geo-alt me-2"></i>
+                <div class="d-flex align-items-center gap-2 gap-md-4">
+                    <div id="location-status" class="d-none d-xl-flex align-items-center text-secondary small cursor-pointer" style="cursor: pointer;" onclick="detectLocation()">
+                        <i class="bi bi-geo-alt me-1"></i>
                         <span id="location-text">Detect Location</span>
                     </div>
                     <div class="d-none d-md-flex align-items-center text-secondary small">
-                        <i class="bi bi-calendar3 me-2"></i>
-                        {{ current_time|date:"D, M d, Y" }}
+                        <i class="bi bi-calendar3 me-1"></i>
+                        {{ current_time|date:"M d" }}
                     </div>
                     {% if user.is_authenticated %}
                     <div class="d-flex align-items-center gap-2">
-                        <span class="d-none d-sm-inline fw-bold text-dark">{{ user.username }}</span>
-                        <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+                        <a href="{% url 'profile' %}" class="text-decoration-none d-flex align-items-center gap-2">
+                            <div class="bg-danger bg-opacity-10 rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                <i class="bi bi-person-fill text-danger"></i>
+                            </div>
+                            <span class="d-none d-sm-inline fw-bold text-dark">{{ user.username }}</span>
+                        </a>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
                     </div>
                     {% else %}
                     <div class="d-flex align-items-center gap-2">
-                        <a href="/login" class="btn btn-danger btn-sm px-3">Login</a>
-                        <a href="/register" class="btn btn-outline-danger btn-sm px-3">Register</a>
+                        <a href="{% url 'login' %}" class="btn btn-danger btn-sm px-2 px-sm-3">Login</a>
+                        <a href="{% url 'register' %}" class="btn btn-outline-danger btn-sm px-2 px-sm-3">Register</a>
                     </div>
                     {% endif %}
                 </div>

@@ -6,8 +6,33 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import Donor, BloodRequest, BloodBank, VaccineRecord
+from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS
+from .forms import UserUpdateForm, ProfileUpdateForm
 import math
+
+@login_required
+def profile(request):
+    # Ensure user has a profile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, instance=profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, f'Your account has been updated!')
+            return redirect('profile')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=profile)
+
+    context = {
+        'u_form': u_form,
+        'p_form': p_form
+    }
+
+    return render(request, 'core/profile.html', context)
 
 def haversine(lat1, lon1, lat2, lon2):
     # Radius of the Earth in km
@@ -92,6 +117,7 @@ def home(request):
             bb.stock_o_plus + bb.stock_o_minus + bb.stock_ab_plus + bb.stock_ab_minus
             for bb in blood_banks
         ]),
+        "total_capacity": sum([bb.total_capacity * 8 for bb in blood_banks]), # 8 blood types
         "vaccinated_percentage": 0
     }
     
@@ -104,7 +130,7 @@ def home(request):
         "donors": donor_list_data[:8],
         "blood_requests": blood_requests[:6],
         "blood_banks": blood_banks,
-        "blood_groups": [g[0] for g in Donor.BLOOD_GROUPS],
+        "blood_groups": [g[0] for g in BLOOD_GROUPS],
         "stats": stats,
         "project_name": "RaktaPulse",
         "current_time": timezone.now(),
@@ -142,7 +168,7 @@ def donor_list(request):
     
     context = {
         'donors': donor_list_data,
-        'blood_groups': [g[0] for g in Donor.BLOOD_GROUPS],
+        'blood_groups': [g[0] for g in BLOOD_GROUPS],
     }
     return render(request, 'core/donor_list.html', context)
 
@@ -231,7 +257,7 @@ def request_blood(request):
             messages.error(request, "Please fill in all required fields.")
             
     context = {
-        'blood_groups': [g[0] for g in Donor.BLOOD_GROUPS],
+        'blood_groups': [g[0] for g in BLOOD_GROUPS],
         'urgency_levels': BloodRequest.URGENCY_LEVELS,
     }
     return render(request, 'core/request_blood.html', context)

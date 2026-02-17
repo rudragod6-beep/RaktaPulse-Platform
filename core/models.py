@@ -1,6 +1,36 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+BLOOD_GROUPS = [
+    ('A+', 'A+'), ('A-', 'A-'),
+    ('B+', 'B+'), ('B-', 'B-'),
+    ('O+', 'O+'), ('O-', 'O-'),
+    ('AB+', 'AB+'), ('AB-', 'AB-'),
+]
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(max_length=500, blank=True)
+    location = models.CharField(max_length=100, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    blood_group = models.CharField(max_length=5, choices=BLOOD_GROUPS, blank=True)
+
+    def __str__(self):
+        return self.user.username
+
+@receiver(post_save, sender=User)
+def create_or_save_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+    else:
+        # For existing users, ensure profile exists
+        if not hasattr(instance, 'profile'):
+            UserProfile.objects.create(user=instance)
+        instance.profile.save()
 
 class VaccineRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vaccine_records')
@@ -16,12 +46,6 @@ class VaccineRecord(models.Model):
         return f"{self.vaccine_name} - Dose {self.dose_number} for {self.user.username}"
 
 class Donor(models.Model):
-    BLOOD_GROUPS = [
-        ('A+', 'A+'), ('A-', 'A-'),
-        ('B+', 'B+'), ('B-', 'B-'),
-        ('O+', 'O+'), ('O-', 'O-'),
-        ('AB+', 'AB+'), ('AB-', 'AB-'),
-    ]
     name = models.CharField(max_length=100)
     blood_group = models.CharField(max_length=5, choices=BLOOD_GROUPS)
     district = models.CharField(max_length=100, default='Kathmandu')
@@ -48,7 +72,7 @@ class BloodRequest(models.Model):
         ('NORMAL', 'Normal'),
     ]
     patient_name = models.CharField(max_length=100)
-    blood_group = models.CharField(max_length=5, choices=Donor.BLOOD_GROUPS)
+    blood_group = models.CharField(max_length=5, choices=BLOOD_GROUPS)
     location = models.CharField(max_length=255)
     urgency = models.CharField(max_length=10, choices=URGENCY_LEVELS, default='NORMAL')
     hospital = models.CharField(max_length=255)
@@ -77,6 +101,7 @@ class BloodBank(models.Model):
     stock_o_minus = models.IntegerField(default=0)
     stock_ab_plus = models.IntegerField(default=0)
     stock_ab_minus = models.IntegerField(default=0)
+    total_capacity = models.IntegerField(default=1000)
 
     def __str__(self):
         return self.name

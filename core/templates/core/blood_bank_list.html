@@ -48,54 +48,78 @@
                     </a>
                 </p>
                 
-                <h6 class="fw-bold text-dark mb-3">Inventory Levels (Units)</h6>
+                <h6 class="fw-bold text-dark mb-3">Inventory Levels (Max {{ bank.total_capacity }} units/type)</h6>
                 <div class="row g-2 mb-4">
                     <div class="col-3">
                         <div class="p-2 border rounded text-center bg-light">
                             <div class="extra-small text-muted">A+</div>
                             <div class="fw-bold">{{ bank.stock_a_plus }}</div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {% widthratio bank.stock_a_plus bank.total_capacity 100 %}%"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="p-2 border rounded text-center bg-light">
                             <div class="extra-small text-muted">A-</div>
                             <div class="fw-bold">{{ bank.stock_a_minus }}</div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {% widthratio bank.stock_a_minus bank.total_capacity 100 %}%"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="p-2 border rounded text-center bg-light">
                             <div class="extra-small text-muted">B+</div>
                             <div class="fw-bold">{{ bank.stock_b_plus }}</div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {% widthratio bank.stock_b_plus bank.total_capacity 100 %}%"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="p-2 border rounded text-center bg-light">
                             <div class="extra-small text-muted">B-</div>
                             <div class="fw-bold">{{ bank.stock_b_minus }}</div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {% widthratio bank.stock_b_minus bank.total_capacity 100 %}%"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="p-2 border rounded text-center bg-light">
                             <div class="extra-small text-muted">O+</div>
                             <div class="fw-bold">{{ bank.stock_o_plus }}</div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {% widthratio bank.stock_o_plus bank.total_capacity 100 %}%"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="p-2 border rounded text-center bg-light">
                             <div class="extra-small text-muted">O-</div>
                             <div class="fw-bold">{{ bank.stock_o_minus }}</div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {% widthratio bank.stock_o_minus bank.total_capacity 100 %}%"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="p-2 border rounded text-center bg-light">
                             <div class="extra-small text-muted">AB+</div>
                             <div class="fw-bold">{{ bank.stock_ab_plus }}</div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {% widthratio bank.stock_ab_plus bank.total_capacity 100 %}%"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="p-2 border rounded text-center bg-light">
                             <div class="extra-small text-muted">AB-</div>
                             <div class="fw-bold">{{ bank.stock_ab_minus }}</div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {% widthratio bank.stock_ab_minus bank.total_capacity 100 %}%"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
