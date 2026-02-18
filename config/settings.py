@@ -86,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 # IMPORTANT: do not remove – injects PROJECT_DESCRIPTION/PROJECT_IMAGE_URL and cache-busting timestamp
                 'core.context_processors.project_context',
+                'core.context_processors.unread_messages',
             ],
         },
     },

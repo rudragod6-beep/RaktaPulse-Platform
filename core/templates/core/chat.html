@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Chat with {{ other_user.username }} - RaktaPulse{% endblock %}
+
+{% block head %}
+<style>
+    .chat-container {
+        height: calc(100vh - 250px);
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .message {
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        position: relative;
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+    .message-sent {
+        align-self: flex-end;
+        background-color: var(--pulse-red);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+    .message-received {
+        align-self: flex-start;
+        background-color: white;
+        color: var(--text-primary);
+        border-bottom-left-radius: 4px;
+        border: 1px solid var(--border-color);
+    }
+    .message-time {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-top: 4px;
+        display: block;
+    }
+    #videoGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+    .video-wrapper {
+        position: relative;
+        aspect-ratio: 4/3;
+        background: #222;
+    }
+    video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .video-label {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.5);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    .call-controls {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        padding: 15px;
+        background: rgba(0,0,0,0.8);
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="glass-card chat-container">
+        <div class="d-flex align-items-center gap-3 pb-3 mb-3 border-bottom">
+            <a href="{% url 'inbox' %}" class="btn btn-link text-secondary p-0">
+                <i class="bi bi-arrow-left fs-4"></i>
+            </a>
+            <div class="rounded-circle overflow-hidden border border-danger-subtle" style="width: 45px; height: 45px;">
+                {% if other_user.profile.profile_pic %}
+                    <img src="{{ other_user.profile.profile_pic.url }}" alt="{{ other_user.username }}" class="w-100 h-100 object-fit-cover">
+                {% else %}
+                    <div class="bg-danger bg-opacity-10 w-100 h-100 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-person-fill text-danger"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0">
+                    <a href="{% url 'public_profile' other_user.username %}" class="text-decoration-none text-dark">
+                        {{ other_user.first_name }} {{ other_user.last_name|default:other_user.username }}
+                    </a>
+                </h6>
+                <small class="text-success d-flex align-items-center gap-1">
+                    <span class="rounded-circle bg-success" style="width: 8px; height: 8px;"></span> Online
+                </small>
+            </div>
+            <div class="ms-auto d-flex gap-2">
+                <button id="startAudioCall" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Audio Call">
+                    <i class="bi bi-telephone-fill"></i>
+                </button>
+                <button id="startVideoCall" class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Video Call">
+                    <i class="bi bi-camera-video-fill"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            {% for msg in chat_messages %}
+                <div class="message {% if msg.sender == user %}message-sent{% else %}message-received{% endif %}">
+                    {{ msg.content }}
+                    <span class="message-time {% if msg.sender == user %}text-white-50{% else %}text-secondary{% endif %}">
+                        {{ msg.timestamp|date:"g:i a" }}
+                    </span>
+                </div>
+            {% empty %}
+                <div class="text-center my-auto text-secondary">
+                    <p class="mb-0">No messages yet. Say hi!</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <form method="post" class="d-flex gap-2">
+            {% csrf_token %}
+            <input type="text" name="content" class="form-control rounded-pill px-4" placeholder="Type your message..." autocomplete="off" required>
+            <button type="submit" class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Call Modal -->
+<div class="modal fade" id="callModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark border-0 overflow-hidden rounded-4">
+            <div class="modal-body p-0">
+                <div id="videoGrid">
+                    <div class="video-wrapper" id="localVideoWrapper">
+                        <video id="localVideo" autoplay muted playsinline></video>
+                        <div class="video-label">{% trans "You" %}</div>
+                    </div>
+                    <div class="video-wrapper" id="remoteVideoWrapper" style="display: none;">
+                        <video id="remoteVideo" autoplay playsinline></video>
+                        <div class="video-label" id="remoteLabel">{{ other_user.username }}</div>
+                    </div>
+                </div>
+                <div class="call-controls">
+                    <button id="toggleMic" class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;"><i class="bi bi-mic-fill"></i></button>
+                    <button id="toggleVideo" class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;"><i class="bi bi-camera-video-fill"></i></button>
+                    <button id="endCall" class="btn btn-danger rounded-pill px-4 fw-bold">{% trans "End Call" %}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incoming Call UI -->
+<div id="incomingCallUI" class="position-fixed top-0 start-50 translate-middle-x mt-4 glass-card p-3 shadow-lg border-danger animate__animated animate__fadeInDown" style="display: none; z-index: 9999; min-width: 320px; border: 2px solid var(--pulse-red) !important;">
+    <div class="d-flex align-items-center gap-3">
+        <div class="bg-danger bg-opacity-10 p-2 rounded-circle">
+            <i class="bi bi-telephone-inbound-fill text-danger fs-4"></i>
+        </div>
+        <div class="flex-grow-1">
+            <h6 class="mb-0 fw-bold">{% trans "Incoming Call" %}</h6>
+            <small class="text-secondary">{{ other_user.username }} {% trans "is calling..." %}</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button id="rejectCall" class="btn btn-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-x-lg"></i></button>
+            <button id="acceptCall" class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-check-lg"></i></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+    // Chat UI logic
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Video/Audio Call Logic
+    const MY_USERNAME = "{{ user.username }}";
+    const OTHER_USERNAME = "{{ other_user.username }}";
+    const PEER_ID_PREFIX = "raktapulse_";
+    
+    // Sanitize username for PeerJS ID (only alphanumeric, -, _)
+    const sanitizeId = (id) => id.replace(/[^a-zA-Z0-9-_]/g, '_');
+    
+    // Initialize PeerJS
+    let peer = new Peer(PEER_ID_PREFIX + sanitizeId(MY_USERNAME), {
+        debug: 1
+    });
+    
+    let localStream;
+    let currentCall;
+    
+    const callModal = new bootstrap.Modal(document.getElementById('callModal'));
+    const incomingCallUI = document.getElementById('incomingCallUI');
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const remoteVideoWrapper = document.getElementById('remoteVideoWrapper');
+    
+    // Handle Peer Open
+    peer.on('open', (id) => {
+        console.log('My peer ID is: ' + id);
+    });
+
+    // Handle incoming calls
+    peer.on('call', (call) => {
+        console.log('Incoming call from: ' + call.peer);
+        // Only accept if it's the other user we are chatting with
+        if (call.peer === PEER_ID_PREFIX + sanitizeId(OTHER_USERNAME)) {
+            currentCall = call;
+            incomingCallUI.style.display = 'block';
+            
+            // Auto-hide incoming call after 30 seconds if not answered
+            setTimeout(() => {
+                if (incomingCallUI.style.display === 'block') {
+                    incomingCallUI.style.display = 'none';
+                }
+            }, 30000);
+        }
+    });
+
+    // Start Call Function
+    async function startCall(videoEnabled = true) {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: videoEnabled,
+                audio: true
+            });
+            
+            localVideo.srcObject = localStream;
+            callModal.show();
+            
+            const call = peer.call(PEER_ID_PREFIX + sanitizeId(OTHER_USERNAME), localStream);
+            handleCall(call);
+        } catch (err) {
+            console.error('Failed to get local stream', err);
+            alert('Could not access camera or microphone. Please ensure you have given permission.');
+        }
+    }
+
+    function handleCall(call) {
+        currentCall = call;
+        call.on('stream', (remoteStream) => {
+            console.log('Received remote stream');
+            remoteVideo.srcObject = remoteStream;
+            remoteVideoWrapper.style.display = 'block';
+        });
+        call.on('close', () => {
+            endCall();
+        });
+        call.on('error', (err) => {
+            console.error('Call error:', err);
+            endCall();
+        });
+    }
+
+    // Button Listeners
+    document.getElementById('startVideoCall').addEventListener('click', () => startCall(true));
+    document.getElementById('startAudioCall').addEventListener('click', () => startCall(false));
+
+    document.getElementById('acceptCall').addEventListener('click', async () => {
+        incomingCallUI.style.display = 'none';
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+            localVideo.srcObject = localStream;
+            callModal.show();
+            currentCall.answer(localStream);
+            handleCall(currentCall);
+        } catch (err) {
+            console.error('Failed to get local stream', err);
+            currentCall.close();
+            alert('Could not access camera or microphone.');
+        }
+    });
+
+    document.getElementById('rejectCall').addEventListener('click', () => {
+        incomingCallUI.style.display = 'none';
+        if (currentCall) currentCall.close();
+    });
+
+    document.getElementById('endCall').addEventListener('click', () => {
+        endCall();
+    });
+
+    function endCall() {
+        if (currentCall) currentCall.close();
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        callModal.hide();
+        remoteVideoWrapper.style.display = 'none';
+        localVideo.srcObject = null;
+        remoteVideo.srcObject = null;
+    }
+
+    // Toggle Mic/Video
+    document.getElementById('toggleMic').addEventListener('click', function() {
+        if (!localStream) return;
+        const audioTrack = localStream.getAudioTracks()[0];
+        if (audioTrack) {
+            audioTrack.enabled = !audioTrack.enabled;
+            this.innerHTML = audioTrack.enabled ? '<i class="bi bi-mic-fill"></i>' : '<i class="bi bi-mic-mute-fill"></i>';
+            this.classList.toggle('btn-outline-light');
+            this.classList.toggle('btn-danger');
+        }
+    });
+
+    document.getElementById('toggleVideo').addEventListener('click', function() {
+        if (!localStream) return;
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack) {
+            videoTrack.enabled = !videoTrack.enabled;
+            this.innerHTML = videoTrack.enabled ? '<i class="bi bi-camera-video-fill"></i>' : '<i class="bi bi-camera-video-off-fill"></i>';
+            this.classList.toggle('btn-outline-light');
+            this.classList.toggle('btn-danger');
+        }
+    });
+
+    // Handle cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        endCall();
+        peer.destroy();
+    });
+</script>
+{% endblock %}

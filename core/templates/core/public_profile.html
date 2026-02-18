@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ profile_user.username }}'s Profile - RaktaPulse{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="glass-card">
+                <div class="text-center mb-4">
+                    <div class="rounded-circle overflow-hidden border border-danger-subtle d-inline-block p-1 mb-3" style="width: 150px; height: 150px;">
+                        {% if profile.profile_pic %}
+                            <img src="{{ profile.profile_pic.url }}" alt="{{ profile_user.username }}" class="w-100 h-100 object-fit-cover rounded-circle">
+                        {% else %}
+                            <div class="bg-danger bg-opacity-10 w-100 h-100 d-flex align-items-center justify-content-center rounded-circle">
+                                <i class="bi bi-person-fill text-danger" style="font-size: 5rem;"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h2 class="fw-bold mb-0">{{ profile_user.first_name }} {{ profile_user.last_name }}</h2>
+                    <p class="text-secondary mb-3">@{{ profile_user.username }}</p>
+                    
+                    {% if donor %}
+                        <div class="d-flex justify-content-center gap-2 mb-4">
+                            <span class="badge bg-danger fs-5 px-3">{{ donor.blood_group }}</span>
+                            {% if donor.is_available %}
+                                <span class="badge bg-success d-flex align-items-center"><i class="bi bi-check-circle-fill me-1"></i> Available</span>
+                            {% else %}
+                                <span class="badge bg-secondary d-flex align-items-center"><i class="bi bi-clock-fill me-1"></i> Not Available</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 h-100">
+                            <h6 class="text-secondary fw-bold small text-uppercase mb-2">Location</h6>
+                            <p class="mb-0"><i class="bi bi-geo-alt-fill text-danger me-2"></i>{{ profile.location|default:"Not specified" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 h-100">
+                            <h6 class="text-secondary fw-bold small text-uppercase mb-2">Member Since</h6>
+                            <p class="mb-0"><i class="bi bi-calendar-event-fill text-danger me-2"></i>{{ profile_user.date_joined|date:"F Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">About</h5>
+                    <div class="p-3 border rounded-3 bg-light-subtle">
+                        {{ profile.bio|default:"No bio provided."|linebreaks }}
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    {% if user.is_authenticated and user != profile_user %}
+                        <a href="{% url 'chat' profile_user.username %}" class="btn btn-danger py-2">
+                            <i class="bi bi-chat-dots-fill me-2"></i> Send Message
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'donor_list' %}" class="btn btn-outline-secondary py-2">
+                        <i class="bi bi-arrow-left me-2"></i> Back to Donors
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Inbox - RaktaPulse{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Messages</h2>
+    </div>
+
+    <div class="glass-card p-0 overflow-hidden">
+        {% if conversations %}
+            <div class="list-group list-group-flush">
+                {% for conv in conversations %}
+                    <a href="{% url 'chat' conv.user.username %}" class="list-group-item list-group-item-action p-4 border-0 border-bottom d-flex align-items-center gap-3">
+                        <div class="rounded-circle overflow-hidden border border-danger-subtle flex-shrink-0" style="width: 60px; height: 60px;">
+                            {% if conv.user.profile.profile_pic %}
+                                <img src="{{ conv.user.profile.profile_pic.url }}" alt="{{ conv.user.username }}" class="w-100 h-100 object-fit-cover">
+                            {% else %}
+                                <div class="bg-danger bg-opacity-10 w-100 h-100 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-person-fill text-danger fs-4"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold mb-0 text-dark">{{ conv.user.first_name }} {{ conv.user.last_name|default:conv.user.username }}</h6>
+                                <small class="text-secondary">{{ conv.last_message.timestamp|date:"M d, g:i a" }}</small>
+                            </div>
+                            <p class="text-secondary mb-0 text-truncate {% if not conv.last_message.is_read and conv.last_message.receiver == user %}fw-bold text-dark{% endif %}">
+                                {% if conv.last_message.sender == user %}You: {% endif %}
+                                {{ conv.last_message.content }}
+                            </p>
+                        </div>
+                        {% if not conv.last_message.is_read and conv.last_message.receiver == user %}
+                            <div class="bg-danger rounded-circle" style="width: 10px; height: 10px;"></div>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="p-5 text-center">
+                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="bi bi-chat-dots text-secondary fs-1"></i>
+                </div>
+                <h5 class="text-dark">No messages yet</h5>
+                <p class="text-secondary">Start a conversation with a donor or requester!</p>
+                <a href="{% url 'donor_list' %}" class="btn btn-danger px-4 mt-2">Find Donors</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

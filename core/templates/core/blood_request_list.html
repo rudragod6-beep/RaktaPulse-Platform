@@ -52,6 +52,11 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="small text-muted"><i class="bi bi-clock me-1"></i> {{ req.created_at|timesince }} ago</span>
                             <div class="d-flex gap-2">
+                                {% if req.user %}
+                                    <a href="{% url 'chat' req.user.username %}" class="btn btn-sm btn-outline-secondary px-2 rounded-pill" title="Message Requester">
+                                        <i class="bi bi-chat-dots-fill"></i>
+                                    </a>
+                                {% endif %}
                                 <a href="{% url 'volunteer_for_request' req.id %}" class="btn btn-sm btn-outline-danger px-3 rounded-pill">Volunteer</a>
                                 <a href="tel:{{ req.contact_number }}" class="btn btn-sm btn-danger px-3 rounded-pill">Call</a>
                             </div>

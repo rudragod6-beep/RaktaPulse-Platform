@@ -1,14 +1,16 @@
 import os
 import platform
 import math
-from django.db import models
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS, DonationEvent, Notification, Hospital
+from django.contrib.auth.models import User
+from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS, DonationEvent, Notification, Hospital, Message
+
 from .forms import UserUpdateForm, ProfileUpdateForm, UserRegisterForm
 
 def hospital_list(request):
@@ -171,7 +173,7 @@ def home(request):
     if request.user.is_authenticated:
         # Get active involvements (where user is donor or requester)
         involved_events = DonationEvent.objects.filter(
-            (models.Q(donor_user=request.user) | models.Q(request__user=request.user)),
+            (Q(donor_user=request.user) | Q(request__user=request.user)),
             is_completed=False
         )
         context["involved_events"] = involved_events
@@ -434,3 +436,63 @@ def register_donor(request):
             messages.error(request, "Please fill in all required fields.")
             
     return render(request, 'core/register_donor.html', {'blood_groups': [g[0] for g in BLOOD_GROUPS]})
+
+def public_profile(request, username):
+    user = User.objects.get(username=username)
+    profile = user.profile
+    donor_profile = getattr(user, 'donor_profile', None)
+    
+    context = {
+        'profile_user': user,
+        'profile': profile,
+        'donor': donor_profile,
+    }
+    return render(request, 'core/public_profile.html', context)
+
+@login_required
+def inbox(request):
+    # Get all users the current user has messaged or received messages from
+    sent_to = Message.objects.filter(sender=request.user).values_list('receiver', flat=True)
+    received_from = Message.objects.filter(receiver=request.user).values_list('sender', flat=True)
+    user_ids = set(list(sent_to) + list(received_from))
+    
+    users = User.objects.filter(id__in=user_ids)
+    
+    # Get last message for each conversation
+    conversations = []
+    for user in users:
+        last_message = Message.objects.filter(
+            (Q(sender=request.user) & Q(receiver=user)) |
+            (Q(sender=user) & Q(receiver=request.user))
+        ).order_by('-timestamp').first()
+        conversations.append({
+            'user': user,
+            'last_message': last_message
+        })
+    
+    conversations.sort(key=lambda x: x['last_message'].timestamp, reverse=True)
+    
+    return render(request, 'core/inbox.html', {'conversations': conversations})
+
+@login_required
+def chat(request, username):
+    other_user = User.objects.get(username=username)
+    if request.method == "POST":
+        content = request.POST.get('content')
+        if content:
+            Message.objects.create(
+                sender=request.user,
+                receiver=other_user,
+                content=content
+            )
+            return redirect('chat', username=username)
+            
+    messages = Message.objects.filter(
+        (Q(sender=request.user) & Q(receiver=other_user)) |
+        (Q(sender=other_user) & Q(receiver=request.user))
+    ).order_by('timestamp')
+    
+    # Mark as read
+    Message.objects.filter(sender=other_user, receiver=request.user, is_read=False).update(is_read=True)
+    
+    return render(request, 'core/chat.html', {'other_user': other_user, 'chat_messages': messages})

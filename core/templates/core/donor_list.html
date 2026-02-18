@@ -79,7 +79,17 @@
                         </span>
                         <p class="mb-0 text-muted extra-small" style="font-size: 0.7rem;">Phone: {{ donor.phone }}</p>
                     </div>
-                    <a href="tel:{{ donor.phone }}" class="btn btn-outline-danger btn-sm px-3 rounded-pill">Contact Now</a>
+                    <div class="d-flex gap-2">
+                        {% if donor.user %}
+                            <a href="{% url 'public_profile' donor.user.username %}" class="btn btn-outline-secondary btn-sm rounded-pill" title="View Profile">
+                                <i class="bi bi-person-circle"></i>
+                            </a>
+                            <a href="{% url 'chat' donor.user.username %}" class="btn btn-outline-danger btn-sm rounded-pill" title="Send Message">
+                                <i class="bi bi-chat-dots-fill"></i>
+                            </a>
+                        {% endif %}
+                        <a href="tel:{{ donor.phone }}" class="btn btn-danger btn-sm px-3 rounded-pill">Call</a>
+                    </div>
                 </div>
             </div>
             {% endfor %}

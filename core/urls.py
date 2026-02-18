@@ -6,7 +6,7 @@ from .views import (
     vaccination_dashboard, add_vaccination, live_map, 
     request_blood, profile, volunteer_for_request, 
     complete_donation, notifications_view,
-    register_donor, hospital_list
+    register_donor, hospital_list, public_profile, inbox, chat
 )
 
 urlpatterns = [
@@ -15,6 +15,9 @@ urlpatterns = [
     path("logout/", logout_view, name="logout"),
     path("register/", register_view, name="register"),
     path("profile/", profile, name="profile"),
+    path("profile/<str:username>/", public_profile, name="public_profile"),
+    path("inbox/", inbox, name="inbox"),
+    path("chat/<str:username>/", chat, name="chat"),
     path("donors/", donor_list, name="donor_list"),
     path("requests/", blood_request_list, name="blood_request_list"),
     path("banks/", blood_bank_list, name="blood_bank_list"),
