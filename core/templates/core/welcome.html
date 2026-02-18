@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Welcome to RaktaPulse{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-red: #e63946;
+        --dark-red: #c1121f;
+        --white: #f1faee;
+    }
+
+    .welcome-body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        overflow-x: hidden;
+        margin-left: -48px; /* Offset the parent padding */
+        margin-right: -48px;
+        margin-top: -48px;
+        margin-bottom: -48px;
+    }
+
+    /* Hide Sidebar and Top Bar on Welcome Page */
+    #sidebar { display: none !important; }
+    #content { margin-left: 0 !important; width: 100% !important; }
+    .top-bar { display: none !important; }
+    #sosButton { display: none !important; }
+    .p-4.p-md-5 { padding: 0 !important; }
+
+    .hero-section {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding: 100px 0;
+    }
+
+    .hero-content {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 1s ease forwards;
+    }
+
+    .hero-image {
+        opacity: 0;
+        transform: scale(0.8);
+        animation: zoomIn 1.2s ease forwards 0.3s;
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes zoomIn {
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .floating-icon {
+        animation: float 3s ease-in-out infinite;
+        color: var(--primary-red);
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+        100% { transform: translateY(0px); }
+    }
+
+    .btn-hero {
+        padding: 15px 40px;
+        font-size: 1.2rem;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+    }
+
+    .btn-hero-primary {
+        background-color: var(--primary-red);
+        border: none;
+        color: white;
+        box-shadow: 0 10px 20px rgba(230, 57, 70, 0.3);
+    }
+
+    .btn-hero-primary:hover {
+        background-color: var(--dark-red);
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(230, 57, 70, 0.4);
+        color: white;
+    }
+
+    .feature-card {
+        border: none;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        background: white;
+        padding: 30px;
+        height: 100%;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        background: linear-gradient(45deg, var(--primary-red), #ff4d6d);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .pulse-animation {
+        animation: pulse-red 2s infinite;
+    }
+
+    @keyframes pulse-red {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(230, 57, 70, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); }
+    }
+
+    .stats-section {
+        background: var(--primary-red);
+        color: white;
+        padding: 60px 0;
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 800;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-body">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                    <i class="bi bi-droplet-fill text-white"></i>
+                </div>
+                <span class="fs-4 fw-bold text-danger">RaktaPulse</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#welcomeNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="welcomeNav">
+                <ul class="navbar-nav ms-auto gap-2">
+                    <li class="nav-item"><a class="nav-link fw-bold" href="{% url 'login' %}">Login</a></li>
+                    <li class="nav-item"><a class="btn btn-danger rounded-pill px-4" href="{% url 'register' %}">Sign Up</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 hero-content">
+                    <h1 class="display-3 fw-bold mb-4">Save Lives with <span style="color: var(--primary-red);">RaktaPulse</span></h1>
+                    <p class="lead mb-5 text-secondary">Every drop counts. Connect with donors, find blood banks, and request life-saving help in seconds. Join our mission to make blood donation accessible to everyone.</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="{% url 'register' %}" class="btn btn-hero btn-hero-primary">Join as Donor</a>
+                        <a href="{% url 'login' %}" class="btn btn-hero btn-outline-danger border-2">Login to Portal</a>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center hero-image mt-5 mt-lg-0">
+                    <div class="position-relative">
+                        <i class="bi bi-droplet-fill floating-icon" style="font-size: 15rem;"></i>
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <i class="bi bi-heart-fill text-white" style="font-size: 4rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Why Choose RaktaPulse?</h2>
+                <div class="mx-auto bg-danger" style="width: 80px; height: 4px; border-radius: 2px;"></div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class="bi bi-search feature-icon"></i>
+                        <h3>Find Donors</h3>
+                        <p class="text-muted">Locate blood donors in your vicinity using our advanced geolocation matching system.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class="bi bi-geo-alt feature-icon"></i>
+                        <h3>Nearby Hospitals</h3>
+                        <p class="text-muted">Instantly find hospitals and blood banks with live distance calculation and maps.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class="bi bi-chat-dots feature-icon"></i>
+                        <h3>Real-time Chat</h3>
+                        <p class="text-muted">Communicate directly with donors via our secure messaging and calling system.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section mt-5">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="stat-number">1000+</div>
+                    <div class="text-uppercase fw-bold">Active Donors</div>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="stat-number">500+</div>
+                    <div class="text-uppercase fw-bold">Lives Saved</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-number">50+</div>
+                    <div class="text-uppercase fw-bold">Partner Hospitals</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="py-5 my-5">
+        <div class="container">
+            <div class="bg-dark text-white p-5 rounded-4 shadow-lg text-center position-relative overflow-hidden">
+                <div class="position-relative z-1">
+                    <h2 class="display-5 fw-bold mb-4">Ready to make a difference?</h2>
+                    <p class="lead mb-4">Register today and start saving lives in your community.</p>
+                    <a href="{% url 'register' %}" class="btn btn-danger btn-lg px-5 py-3 pulse-animation">Get Started Now</a>
+                </div>
+                <div class="position-absolute bottom-0 end-0 p-3 opacity-25">
+                    <i class="bi bi-shield-check" style="font-size: 10rem;"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white py-5 border-top">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <span class="fw-bold text-danger">RaktaPulse</span> &copy; 2026. All rights reserved.
+                </div>
+                <div class="col-md-6 text-center text-md-end mt-3 mt-md-0">
+                    <div class="d-flex justify-content-center justify-content-md-end gap-3">
+                        <a href="#" class="text-secondary fs-4"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="text-secondary fs-4"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" class="text-secondary fs-4"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="text-secondary fs-4"><i class="bi bi-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock %}

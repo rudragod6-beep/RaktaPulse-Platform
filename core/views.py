@@ -109,6 +109,12 @@ def register_view(request):
         form = UserRegisterForm()
     return render(request, "core/register.html", {"form": form})
 
+def welcome(request):
+    """Render a beautiful animated welcome page."""
+    if request.user.is_authenticated:
+        return redirect('home')
+    return render(request, "core/welcome.html")
+
 def home(request):
     """Render the RaktaPulse Dashboard experience."""
     query_blood = request.GET.get('blood_group', '')

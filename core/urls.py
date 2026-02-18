@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import (
-    home, login_view, logout_view, register_view, donor_list, 
+    welcome, home, login_view, logout_view, register_view, donor_list, 
     blood_request_list, blood_bank_list, vaccination_info, 
     vaccination_dashboard, add_vaccination, live_map, 
     request_blood, profile, volunteer_for_request, 
@@ -10,7 +10,8 @@ from .views import (
 )
 
 urlpatterns = [
-    path("", home, name="home"),
+    path("", welcome, name="welcome"),
+    path("dashboard/", home, name="home"),
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("register/", register_view, name="register"),

@@ -166,6 +166,7 @@
                     </div>
                 </div>
                 <div class="call-controls">
+                    <div id="callStatus" class="position-absolute top-0 start-50 translate-middle-x mt-3 text-white-50 small">Connecting...</div>
                     <button id="toggleMic" class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;"><i class="bi bi-mic-fill"></i></button>
                     <button id="toggleVideo" class="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;"><i class="bi bi-camera-video-fill"></i></button>
                     <button id="endCall" class="btn btn-danger rounded-pill px-4 fw-bold">{% trans "End Call" %}</button>
@@ -174,6 +175,14 @@
         </div>
     </div>
 </div>
+
+<!-- Audio Assets -->
+<audio id="incomingRing" loop>
+    <source src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" type="audio/mpeg">
+</audio>
+<audio id="outgoingRing" loop>
+    <source src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3" type="audio/mpeg">
+</audio>
 
 <!-- Incoming Call UI -->
 <div id="incomingCallUI" class="position-fixed top-0 start-50 translate-middle-x mt-4 glass-card p-3 shadow-lg border-danger animate__animated animate__fadeInDown" style="display: none; z-index: 9999; min-width: 320px; border: 2px solid var(--pulse-red) !important;">
@@ -208,8 +217,17 @@
     // Sanitize username for PeerJS ID (only alphanumeric, -, _)
     const sanitizeId = (id) => id.replace(/[^a-zA-Z0-9-_]/g, '_');
     
-    // Initialize PeerJS
+    // Initialize PeerJS with STUN servers for reliability
     let peer = new Peer(PEER_ID_PREFIX + sanitizeId(MY_USERNAME), {
+        config: {
+            'iceServers': [
+                { url: 'stun:stun.l.google.com:19302' },
+                { url: 'stun:stun1.l.google.com:19302' },
+                { url: 'stun:stun2.l.google.com:19302' },
+                { url: 'stun:stun3.l.google.com:19302' },
+                { url: 'stun:stun4.l.google.com:19302' },
+            ]
+        },
         debug: 1
     });
     
@@ -221,7 +239,22 @@
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
     const remoteVideoWrapper = document.getElementById('remoteVideoWrapper');
+    const callStatus = document.getElementById('callStatus');
+    const incomingRing = document.getElementById('incomingRing');
+    const outgoingRing = document.getElementById('outgoingRing');
     
+    function playRingtone(type) {
+        if (type === 'incoming') incomingRing.play().catch(e => console.log('Audio blocked'));
+        if (type === 'outgoing') outgoingRing.play().catch(e => console.log('Audio blocked'));
+    }
+
+    function stopRingtones() {
+        incomingRing.pause();
+        incomingRing.currentTime = 0;
+        outgoingRing.pause();
+        outgoingRing.currentTime = 0;
+    }
+
     // Handle Peer Open
     peer.on('open', (id) => {
         console.log('My peer ID is: ' + id);
@@ -230,15 +263,16 @@
     // Handle incoming calls
     peer.on('call', (call) => {
         console.log('Incoming call from: ' + call.peer);
-        // Only accept if it's the other user we are chatting with
         if (call.peer === PEER_ID_PREFIX + sanitizeId(OTHER_USERNAME)) {
+            // If already in a call, busy logic could go here
             currentCall = call;
             incomingCallUI.style.display = 'block';
+            playRingtone('incoming');
             
-            // Auto-hide incoming call after 30 seconds if not answered
             setTimeout(() => {
                 if (incomingCallUI.style.display === 'block') {
                     incomingCallUI.style.display = 'none';
+                    stopRingtones();
                 }
             }, 30000);
         }
@@ -247,6 +281,7 @@
     // Start Call Function
     async function startCall(videoEnabled = true) {
         try {
+            callStatus.innerText = "Requesting permissions...";
             localStream = await navigator.mediaDevices.getUserMedia({
                 video: videoEnabled,
                 audio: true
@@ -254,12 +289,14 @@
             
             localVideo.srcObject = localStream;
             callModal.show();
+            callStatus.innerText = "Calling...";
+            playRingtone('outgoing');
             
             const call = peer.call(PEER_ID_PREFIX + sanitizeId(OTHER_USERNAME), localStream);
             handleCall(call);
         } catch (err) {
             console.error('Failed to get local stream', err);
-            alert('Could not access camera or microphone. Please ensure you have given permission.');
+            alert('Could not access camera or microphone.');
         }
     }
 
@@ -267,6 +304,8 @@
         currentCall = call;
         call.on('stream', (remoteStream) => {
             console.log('Received remote stream');
+            stopRingtones();
+            callStatus.innerText = "Connected";
             remoteVideo.srcObject = remoteStream;
             remoteVideoWrapper.style.display = 'block';
         });
@@ -275,6 +314,7 @@
         });
         call.on('error', (err) => {
             console.error('Call error:', err);
+            stopRingtones();
             endCall();
         });
     }
@@ -285,7 +325,9 @@
 
     document.getElementById('acceptCall').addEventListener('click', async () => {
         incomingCallUI.style.display = 'none';
+        stopRingtones();
         try {
+            callStatus.innerText = "Answering...";
             localStream = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
@@ -303,6 +345,7 @@
 
     document.getElementById('rejectCall').addEventListener('click', () => {
         incomingCallUI.style.display = 'none';
+        stopRingtones();
         if (currentCall) currentCall.close();
     });
 
@@ -311,6 +354,7 @@
     });
 
     function endCall() {
+        stopRingtones();
         if (currentCall) currentCall.close();
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
