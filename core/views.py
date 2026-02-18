@@ -1,5 +1,6 @@
 import os
 import platform
+import math
 from django.db import models
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
@@ -7,9 +8,32 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS, DonationEvent, Notification, Feedback
-from .forms import UserUpdateForm, ProfileUpdateForm
-import math
+from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS, DonationEvent, Notification, Hospital
+from .forms import UserUpdateForm, ProfileUpdateForm, UserRegisterForm
+
+def hospital_list(request):
+    user_lat = request.GET.get('lat')
+    user_lng = request.GET.get('lng')
+    
+    hospitals = Hospital.objects.all()
+    hospital_list_data = list(hospitals)
+    
+    if user_lat and user_lng:
+        try:
+            u_lat = float(user_lat)
+            u_lng = float(user_lng)
+            for h in hospital_list_data:
+                if h.latitude and h.longitude:
+                    h.distance = haversine(u_lat, u_lng, float(h.latitude), float(h.longitude))
+                else:
+                    h.distance = 999999
+            hospital_list_data.sort(key=lambda x: x.distance)
+        except ValueError:
+            hospital_list_data.sort(key=lambda x: x.name)
+    else:
+        hospital_list_data.sort(key=lambda x: x.name)
+        
+    return render(request, 'core/hospital_list.html', {'hospitals': hospital_list_data})
 
 @login_required
 def profile(request):
@@ -18,7 +42,7 @@ def profile(request):
     
     if request.method == 'POST':
         u_form = UserUpdateForm(request.POST, instance=request.user)
-        p_form = ProfileUpdateForm(request.POST, instance=profile)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
         if u_form.is_valid() and p_form.is_valid():
             u_form.save()
             p_form.save()
@@ -67,13 +91,20 @@ def logout_view(request):
 
 def register_view(request):
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = UserRegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
+            profile = user.profile
+            profile.blood_group = form.cleaned_data.get('blood_group')
+            profile.location = form.cleaned_data.get('location')
+            profile.phone = form.cleaned_data.get('phone')
+            profile.save()
+            
             login(request, user)
+            messages.success(request, f"Welcome to RaktaPulse, {user.username}! You are now a registered donor.")
             return redirect("home")
     else:
-        form = UserCreationForm()
+        form = UserRegisterForm()
     return render(request, "core/register.html", {"form": form})
 
 def home(request):
@@ -276,6 +307,7 @@ def request_blood(request):
     context = {
         'blood_groups': [g[0] for g in BLOOD_GROUPS],
         'urgency_levels': BloodRequest.URGENCY_LEVELS,
+        'selected_hospital': request.GET.get('hospital', ''),
     }
     return render(request, 'core/request_blood.html', context)
 
@@ -355,12 +387,12 @@ def complete_donation(request, event_id):
         # Notify both
         Notification.objects.create(
             user=event.donor_user,
-            message=f"Thank you for your donation to {event.request.patient_name}! Your feedback is valuable to us."
+            message=f"Thank you for your donation to {event.request.patient_name}!"
         )
         if event.request.user:
             Notification.objects.create(
                 user=event.request.user,
-                message=f"We hope the donation for {event.request.patient_name} went well. Please share your feedback!"
+                message=f"We hope the donation for {event.request.patient_name} went well."
             )
         
         messages.success(request, "Donation marked as completed. Thank you!")
@@ -368,21 +400,6 @@ def complete_donation(request, event_id):
         messages.error(request, "You are not authorized to complete this event.")
         
     return redirect('home')
-
-@login_required
-def submit_feedback(request):
-    if request.method == "POST":
-        content = request.POST.get('content')
-        rating = request.POST.get('rating')
-        if content:
-            Feedback.objects.create(
-                user=request.user,
-                content=content,
-                rating=rating if rating else 5
-            )
-            messages.success(request, "Thank you for your feedback!")
-            return redirect('home')
-    return render(request, 'core/feedback.html')
 
 @login_required
 def notifications_view(request):

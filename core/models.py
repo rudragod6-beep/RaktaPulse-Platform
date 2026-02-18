@@ -18,6 +18,7 @@ class UserProfile(models.Model):
     birth_date = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     blood_group = models.CharField(max_length=5, choices=BLOOD_GROUPS, blank=True)
+    profile_pic = models.ImageField(upload_to='profile_pics', blank=True, null=True)
 
     def __str__(self):
         return self.user.username
@@ -31,6 +32,16 @@ def create_or_save_user_profile(sender, instance, created, **kwargs):
         if not hasattr(instance, 'profile'):
             UserProfile.objects.create(user=instance)
         instance.profile.save()
+
+@receiver(post_save, sender=UserProfile)
+def sync_donor_profile(sender, instance, **kwargs):
+    if instance.blood_group:
+        donor, created = Donor.objects.get_or_create(user=instance.user)
+        donor.name = f"{instance.user.first_name} {instance.user.last_name}".strip() or instance.user.username
+        donor.blood_group = instance.blood_group
+        donor.location = instance.location
+        donor.phone = instance.phone
+        donor.save()
 
 class VaccineRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vaccine_records')
@@ -65,6 +76,17 @@ class Donor(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.blood_group}) - {'Verified' if self.is_verified else 'Unverified'}"
+
+class Hospital(models.Model):
+    name = models.CharField(max_length=255)
+    location = models.CharField(max_length=255)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    phone = models.CharField(max_length=100, null=True, blank=True)
+    website = models.URLField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 class BloodRequest(models.Model):
     URGENCY_LEVELS = [
@@ -126,12 +148,3 @@ class Notification(models.Model):
     
     def __str__(self):
         return f"Notification for {self.user.username}: {self.message[:20]}..."
-
-class Feedback(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedbacks')
-    content = models.TextField()
-    rating = models.PositiveIntegerField(default=5)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Feedback from {self.user.username} - {self.rating} stars"

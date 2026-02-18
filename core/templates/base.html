@@ -218,6 +218,10 @@
             z-index: -1;
         }
 
+        .dropdown-toggle.no-caret::after {
+            display: none;
+        }
+
         .sos-content {
             display: flex;
             flex-direction: column;
@@ -272,11 +276,10 @@
                 <li class="{% if request.resolver_match.url_name == 'donor_list' %}active{% endif %}"><a href="{% url 'donor_list' %}"><i class="bi bi-people-fill"></i> {% trans "Donors" %}</a></li>
                 <li class="{% if request.resolver_match.url_name == 'blood_request_list' %}active{% endif %}"><a href="{% url 'blood_request_list' %}"><i class="bi bi-megaphone-fill"></i> {% trans "Blood Requests" %}</a></li>
                 <li class="{% if request.resolver_match.url_name == 'blood_bank_list' %}active{% endif %}"><a href="{% url 'blood_bank_list' %}"><i class="bi bi-hospital-fill"></i> {% trans "Blood Banks" %}</a></li>
+                <li class="{% if request.resolver_match.url_name == 'hospital_list' %}active{% endif %}"><a href="{% url 'hospital_list' %}"><i class="bi bi-building-heart"></i> {% trans "Hospitals" %}</a></li>
                 <li class="{% if request.resolver_match.url_name == 'live_map' %}active{% endif %}"><a href="{% url 'live_map' %}"><i class="bi bi-map text-danger"></i> {% trans "Live Alerts" %}</a></li>
                 <li class="{% if request.resolver_match.url_name == 'vaccination_info' %}active{% endif %}"><a href="{% url 'vaccination_info' %}"><i class="bi bi-shield-check"></i> {% trans "Vaccination" %}</a></li>
-                <li class="{% if request.resolver_match.url_name == 'submit_feedback' %}active{% endif %}"><a href="{% url 'submit_feedback' %}"><i class="bi bi-chat-left-heart-fill"></i> {% trans "Feedback" %}</a></li>
                 {% if user.is_authenticated %}
-                <li class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"><a href="{% url 'profile' %}"><i class="bi bi-person-bounding-box"></i> {% trans "My Profile" %}</a></li>
                 <li class="{% if 'vaccination_dashboard' in request.resolver_match.url_name or 'add_vaccination' in request.resolver_match.url_name %}active{% endif %}"><a href="{% url 'vaccination_dashboard' %}"><i class="bi bi-journal-check"></i> {% trans "My Records" %}</a></li>
                 {% endif %}
                 <li><a href="/admin/"><i class="bi bi-gear-fill"></i> {% trans "Settings" %}</a></li>
@@ -340,13 +343,43 @@
                                 {{ user.notifications.count }}
                             </span>
                         </a>
-                        <a href="{% url 'profile' %}" class="text-decoration-none d-flex align-items-center gap-2">
-                            <div class="bg-danger bg-opacity-10 rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                <i class="bi bi-person-fill text-danger"></i>
-                            </div>
-                            <span class="d-none d-sm-inline fw-bold text-dark">{{ user.username }}</span>
-                        </a>
-                        <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
+                        
+                        <!-- Profile Dropdown -->
+                        <div class="dropdown">
+                            <a href="#" class="text-decoration-none d-flex align-items-center gap-2 dropdown-toggle no-caret" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="rounded-circle overflow-hidden border border-danger-subtle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                    {% if user.profile.profile_pic %}
+                                        <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.username }}" class="w-100 h-100 object-fit-cover">
+                                    {% else %}
+                                        <div class="bg-danger bg-opacity-10 w-100 h-100 d-flex align-items-center justify-content-center">
+                                            <i class="bi bi-person-fill text-danger"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <span class="d-none d-sm-inline fw-bold text-dark">{{ user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="profileDropdown">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'profile' %}">
+                                        <i class="bi bi-person-circle text-danger"></i>
+                                        <span>{% trans "My Profile" %}</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'profile' %}">
+                                        <i class="bi bi-pencil-square text-danger"></i>
+                                        <span>{% trans "Change Name" %}</span>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider opacity-50"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" href="{% url 'logout' %}">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                        <span>{% trans "Logout" %}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                     {% else %}
                     <div class="d-flex align-items-center gap-2">

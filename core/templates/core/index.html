@@ -224,8 +224,18 @@
                     {% for donor in donors %}
                     <div class="donor-row d-flex align-items-center justify-content-between flex-wrap gap-3">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="blood-group-pill">{{ donor.blood_group }}</div>
+                            <div class="position-relative">
+                                {% if donor.user and donor.user.profile.profile_pic %}
+                                    <img src="{{ donor.user.profile.profile_pic.url }}" alt="{{ donor.name }}" class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover;">
+                                    <span class="position-absolute bottom-0 end-0 badge rounded-pill bg-danger border border-white" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;">
+                                        {{ donor.blood_group }}
+                                    </span>
+                                {% else %}
+                                    <div class="blood-group-pill">{{ donor.blood_group }}</div>
+                                {% endif %}
+                            </div>
                             <div>
+
                                 <h6 class="mb-0 fw-bold text-dark">
                                     {{ donor.name }}
                                     {% if donor.is_verified %}

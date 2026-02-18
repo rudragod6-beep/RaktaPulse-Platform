@@ -9,16 +9,20 @@
         <div class="col-lg-8">
             <div class="glass-card">
                 <div class="d-flex align-items-center mb-4">
-                    <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
-                        <i class="bi bi-person-fill text-white fs-2"></i>
-                    </div>
+                    {% if user.profile.profile_pic %}
+                        <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.username }}" class="rounded-circle me-3 object-fit-cover" style="width: 64px; height: 64px;">
+                    {% else %}
+                        <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                            <i class="bi bi-person-fill text-white fs-2"></i>
+                        </div>
+                    {% endif %}
                     <div>
                         <h2 class="mb-0 fw-bold">{{ user.username }}</h2>
                         <p class="text-secondary mb-0">Member since {{ user.date_joined|date:"M d, Y" }}</p>
                     </div>
                 </div>
 
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
                     <h5 class="fw-bold mb-3 border-bottom pb-2">Account Information</h5>
                     <div class="row g-3 mb-4">
@@ -58,6 +62,10 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">Location</label>
                             {{ p_form.location }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Profile Picture</label>
+                            {{ p_form.profile_pic }}
                         </div>
                     </div>
 

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hospitals - RaktaPulse{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="brand-font mb-1">Hospitals in Kathmandu</h2>
+            <p class="text-secondary">A comprehensive list of public and private hospitals for blood requests and emergency care.</p>
+        </div>
+        <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+            <button id="nearMeBtn" class="btn btn-glass btn-sm rounded-pill">
+                <i class="bi bi-geo-fill me-1"></i> Nearest First
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for hospital in hospitals %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="glass-card h-100 d-flex flex-column">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h4 class="brand-font mb-1 text-dark">{{ hospital.name }}</h4>
+                        {% if hospital.distance %}
+                        <span class="badge bg-danger-soft text-danger rounded-pill small">
+                            {{ hospital.distance|floatformat:1 }} km away
+                        </span>
+                        {% endif %}
+                    </div>
+                    <p class="text-secondary small mb-0"><i class="bi bi-geo-alt me-1"></i> {{ hospital.location }}</p>
+                </div>
+                
+                <div class="mt-auto">
+                    {% if hospital.phone %}
+                    <p class="mb-2">
+                        <a href="tel:{{ hospital.phone }}" class="text-decoration-none text-danger fw-bold">
+                            <i class="bi bi-telephone me-2"></i> {{ hospital.phone }}
+                        </a>
+                    </p>
+                    {% endif %}
+                    
+                    {% if hospital.website %}
+                    <p class="mb-3">
+                        <a href="{{ hospital.website }}" target="_blank" class="text-decoration-none text-primary small">
+                            <i class="bi bi-globe me-2"></i> Visit Website
+                        </a>
+                    </p>
+                    {% endif %}
+                    
+                    <a href="{% url 'request_blood' %}?hospital={{ hospital.name|urlencode }}" class="btn btn-outline-danger btn-sm w-100 rounded-pill">Request Blood Here</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-hospital fs-1 text-secondary opacity-25"></i>
+            <p class="text-secondary mt-3">No hospitals registered in the system.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.getElementById('nearMeBtn').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Locating...';
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                window.location.href = `?lat=${lat}&lng=${lng}`;
+            }, function(error) {
+                console.error("Error getting location: ", error);
+                alert("Could not get your location. Please ensure location services are enabled.");
+                document.getElementById('nearMeBtn').innerHTML = '<i class="bi bi-geo-fill me-1"></i> Nearest First';
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    });
+
+    // Automatically check if we should show distance
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('lat') && urlParams.has('lng')) {
+        document.getElementById('nearMeBtn').classList.add('btn-danger');
+        document.getElementById('nearMeBtn').classList.remove('btn-glass');
+        document.getElementById('nearMeBtn').innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Sorted by Proximity';
+    }
+</script>
+{% endblock %}

@@ -5,8 +5,8 @@ from .views import (
     blood_request_list, blood_bank_list, vaccination_info, 
     vaccination_dashboard, add_vaccination, live_map, 
     request_blood, profile, volunteer_for_request, 
-    complete_donation, submit_feedback, notifications_view,
-    register_donor
+    complete_donation, notifications_view,
+    register_donor, hospital_list
 )
 
 urlpatterns = [
@@ -25,7 +25,7 @@ urlpatterns = [
     path("request-blood/", request_blood, name="request_blood"),
     path("volunteer/<int:request_id>/", volunteer_for_request, name="volunteer_for_request"),
     path("complete-donation/<int:event_id>/", complete_donation, name="complete_donation"),
-    path("feedback/", submit_feedback, name="submit_feedback"),
     path("notifications/", notifications_view, name="notifications"),
     path("register-donor/", register_donor, name="register_donor"),
+    path("hospitals/", hospital_list, name="hospital_list"),
 ]
