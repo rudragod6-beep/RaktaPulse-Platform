@@ -21,8 +21,8 @@
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <div>
-                <h2 class="brand-font mb-1">Blood Requests</h2>
-                <p class="text-secondary">Current active requirements for blood in various hospitals.</p>
+                <h2 class="brand-font mb-1">{% if current_status %}{{ current_status }} {% endif %}Blood Requests</h2>
+                <p class="text-secondary">{% if current_status == 'Active' %}Current urgent requirements for blood.{% else %}History of blood requests in our community.{% endif %}</p>
             </div>
             <a href="{% url 'request_blood' %}" class="btn btn-danger rounded-pill px-4">Post a Request</a>
         </div>
@@ -34,7 +34,14 @@
             <div class="col-md-6 col-xl-4 mb-4">
                 <div class="p-3 border rounded h-100 bg-light d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="urgency-badge bg-{{ req.urgency|lower }}">{{ req.urgency }}</span>
+                        <div class="d-flex gap-2">
+                            <span class="urgency-badge bg-{{ req.urgency|lower }}">{{ req.urgency }}</span>
+                            {% if req.status == 'Active' %}
+                            <span class="badge bg-success bg-opacity-10 text-success small" style="font-size: 0.7rem;">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary small" style="font-size: 0.7rem;">{{ req.status }}</span>
+                            {% endif %}
+                        </div>
                         <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">
                             {{ req.blood_group }}
                         </div>
@@ -44,7 +51,10 @@
                     <div class="mt-auto pt-3 border-top">
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="small text-muted"><i class="bi bi-clock me-1"></i> {{ req.created_at|timesince }} ago</span>
-                            <a href="tel:{{ req.contact_number }}" class="btn btn-sm btn-danger px-3 rounded-pill">Help Now</a>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'volunteer_for_request' req.id %}" class="btn btn-sm btn-outline-danger px-3 rounded-pill">Volunteer</a>
+                                <a href="tel:{{ req.contact_number }}" class="btn btn-sm btn-danger px-3 rounded-pill">Call</a>
+                            </div>
                         </div>
                     </div>
                 </div>

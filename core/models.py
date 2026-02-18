@@ -46,6 +46,7 @@ class VaccineRecord(models.Model):
         return f"{self.vaccine_name} - Dose {self.dose_number} for {self.user.username}"
 
 class Donor(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='donor_profile')
     name = models.CharField(max_length=100)
     blood_group = models.CharField(max_length=5, choices=BLOOD_GROUPS)
     district = models.CharField(max_length=100, default='Kathmandu')
@@ -71,6 +72,7 @@ class BloodRequest(models.Model):
         ('URGENT', 'Urgent'),
         ('NORMAL', 'Normal'),
     ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blood_requests', null=True, blank=True)
     patient_name = models.CharField(max_length=100)
     blood_group = models.CharField(max_length=5, choices=BLOOD_GROUPS)
     location = models.CharField(max_length=255)
@@ -105,3 +107,31 @@ class BloodBank(models.Model):
 
     def __str__(self):
         return self.name
+
+class DonationEvent(models.Model):
+    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, related_name='donations')
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='donations')
+    donor_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='my_donations')
+    date = models.DateTimeField(default=timezone.now)
+    is_completed = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"Donation by {self.donor.name} for {self.request.patient_name}"
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Notification for {self.user.username}: {self.message[:20]}..."
+
+class Feedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedbacks')
+    content = models.TextField()
+    rating = models.PositiveIntegerField(default=5)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Feedback from {self.user.username} - {self.rating} stars"

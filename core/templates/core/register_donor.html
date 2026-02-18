@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="glass-card p-4">
+                <h2 class="mb-4">{% trans "Become a Blood Donor" %}</h2>
+                <p class="text-muted">{% trans "Join our community of lifesavers. Your donation can save lives." %}</p>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="blood_group" class="form-label">{% trans "Blood Group" %}</label>
+                        <select name="blood_group" id="blood_group" class="form-select" required>
+                            <option value="">{% trans "Select Blood Group" %}</option>
+                            {% for group in blood_groups %}
+                            <option value="{{ group }}">{{ group }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">{% trans "Phone Number" %}</label>
+                        <input type="text" name="phone" id="phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">{% trans "Location" %}</label>
+                        <input type="text" name="location" id="location" class="form-control" placeholder="e.g. Baluwatar, Kathmandu">
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100">{% trans "Register as Donor" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

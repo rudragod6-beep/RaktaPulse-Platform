@@ -1,5 +1,6 @@
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -178,6 +179,78 @@
             #sidebar.active { margin-left: 0; }
         }
 
+        /* SOS Floating Button */
+        .sos-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 65px;
+            height: 65px;
+            background-color: var(--pulse-red);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4);
+            z-index: 9999;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: 800;
+            font-size: 1.1rem;
+            border: 3px solid white;
+        }
+
+        .sos-btn:hover {
+            transform: scale(1.1);
+            color: white;
+            box-shadow: 0 6px 20px rgba(230, 57, 70, 0.6);
+        }
+
+        .sos-btn .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: var(--pulse-red);
+            opacity: 0.6;
+            animation: sos-pulse 2s infinite;
+            z-index: -1;
+        }
+
+        .sos-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .sos-text {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .sos-number {
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        @keyframes sos-pulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        @media (max-width: 576px) {
+            .sos-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 55px;
+                height: 55px;
+                font-size: 0.9rem;
+            }
+        }
+
         {% block head %}{% endblock %}
     </style>
 </head>
@@ -195,25 +268,19 @@
             </div>
             
             <ul class="sidebar-menu mt-4">
-                <li class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}"><a href="{% url 'home' %}"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a></li>
-                <li class="{% if request.resolver_match.url_name == 'donor_list' %}active{% endif %}"><a href="{% url 'donor_list' %}"><i class="bi bi-people-fill"></i> Donors</a></li>
-                <li class="{% if request.resolver_match.url_name == 'blood_request_list' %}active{% endif %}"><a href="{% url 'blood_request_list' %}"><i class="bi bi-megaphone-fill"></i> Blood Requests</a></li>
-                <li class="{% if request.resolver_match.url_name == 'blood_bank_list' %}active{% endif %}"><a href="{% url 'blood_bank_list' %}"><i class="bi bi-hospital-fill"></i> Blood Banks</a></li>
-                <li class="{% if request.resolver_match.url_name == 'live_map' %}active{% endif %}"><a href="{% url 'live_map' %}"><i class="bi bi-map text-danger"></i> Live Alerts</a></li>
-                <li class="{% if request.resolver_match.url_name == 'vaccination_info' %}active{% endif %}"><a href="{% url 'vaccination_info' %}"><i class="bi bi-shield-check"></i> Vaccination</a></li>
+                <li class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}"><a href="{% url 'home' %}"><i class="bi bi-grid-1x2-fill"></i> {% trans "Dashboard" %}</a></li>
+                <li class="{% if request.resolver_match.url_name == 'donor_list' %}active{% endif %}"><a href="{% url 'donor_list' %}"><i class="bi bi-people-fill"></i> {% trans "Donors" %}</a></li>
+                <li class="{% if request.resolver_match.url_name == 'blood_request_list' %}active{% endif %}"><a href="{% url 'blood_request_list' %}"><i class="bi bi-megaphone-fill"></i> {% trans "Blood Requests" %}</a></li>
+                <li class="{% if request.resolver_match.url_name == 'blood_bank_list' %}active{% endif %}"><a href="{% url 'blood_bank_list' %}"><i class="bi bi-hospital-fill"></i> {% trans "Blood Banks" %}</a></li>
+                <li class="{% if request.resolver_match.url_name == 'live_map' %}active{% endif %}"><a href="{% url 'live_map' %}"><i class="bi bi-map text-danger"></i> {% trans "Live Alerts" %}</a></li>
+                <li class="{% if request.resolver_match.url_name == 'vaccination_info' %}active{% endif %}"><a href="{% url 'vaccination_info' %}"><i class="bi bi-shield-check"></i> {% trans "Vaccination" %}</a></li>
+                <li class="{% if request.resolver_match.url_name == 'submit_feedback' %}active{% endif %}"><a href="{% url 'submit_feedback' %}"><i class="bi bi-chat-left-heart-fill"></i> {% trans "Feedback" %}</a></li>
                 {% if user.is_authenticated %}
-                <li class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"><a href="{% url 'profile' %}"><i class="bi bi-person-bounding-box"></i> My Profile</a></li>
-                <li class="{% if 'vaccination_dashboard' in request.resolver_match.url_name or 'add_vaccination' in request.resolver_match.url_name %}active{% endif %}"><a href="{% url 'vaccination_dashboard' %}"><i class="bi bi-journal-check"></i> My Records</a></li>
+                <li class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"><a href="{% url 'profile' %}"><i class="bi bi-person-bounding-box"></i> {% trans "My Profile" %}</a></li>
+                <li class="{% if 'vaccination_dashboard' in request.resolver_match.url_name or 'add_vaccination' in request.resolver_match.url_name %}active{% endif %}"><a href="{% url 'vaccination_dashboard' %}"><i class="bi bi-journal-check"></i> {% trans "My Records" %}</a></li>
                 {% endif %}
-                <li><a href="/admin/"><i class="bi bi-gear-fill"></i> Settings</a></li>
+                <li><a href="/admin/"><i class="bi bi-gear-fill"></i> {% trans "Settings" %}</a></li>
             </ul>
-
-            <div class="position-absolute bottom-0 w-100 p-4">
-                <div class="glass-card p-3 bg-opacity-10 border-danger border-opacity-25" style="background: rgba(230, 57, 70, 0.05);">
-                    <p class="small text-secondary mb-2">Need Help?</p>
-                    <a href="tel:1115" class="btn btn-sm btn-danger w-100 fw-bold">Emergency: 1115</a>
-                </div>
-            </div>
         </nav>
 
         <!-- Page Content -->
@@ -231,6 +298,31 @@
                 </div>
                 
                 <div class="d-flex align-items-center gap-2 gap-md-4">
+                    <!-- Language Switcher -->
+                    <div class="dropdown">
+                        <button class="btn btn-link text-secondary dropdown-toggle d-flex align-items-center gap-1 p-0 text-decoration-none small" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-translate"></i>
+                            <span class="d-none d-sm-inline">{{ LANGUAGE_CODE|upper }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            {% get_current_language as LANGUAGE_CODE %}
+                            {% get_available_languages as LANGUAGES %}
+                            {% get_language_info_list for LANGUAGES as languages %}
+                            {% for language in languages %}
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                                    <input name="language" type="hidden" value="{{ language.code }}">
+                                    <button type="submit" class="dropdown-item {% if language.code == LANGUAGE_CODE %}active{% endif %}">
+                                        {{ language.name_local }} ({{ language.code|upper }})
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
                     <div id="location-status" class="d-none d-xl-flex align-items-center text-secondary small cursor-pointer" style="cursor: pointer;" onclick="detectLocation()">
                         <i class="bi bi-geo-alt me-1"></i>
                         <span id="location-text">Detect Location</span>
@@ -241,6 +333,13 @@
                     </div>
                     {% if user.is_authenticated %}
                     <div class="d-flex align-items-center gap-2">
+                        <!-- Notification Bell -->
+                        <a href="{% url 'notifications' %}" class="text-decoration-none me-2 position-relative">
+                            <i class="bi bi-bell-fill fs-5 text-secondary"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                {{ user.notifications.count }}
+                            </span>
+                        </a>
                         <a href="{% url 'profile' %}" class="text-decoration-none d-flex align-items-center gap-2">
                             <div class="bg-danger bg-opacity-10 rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                                 <i class="bi bi-person-fill text-danger"></i>
@@ -335,6 +434,39 @@
         }
         checkLocationCookie();
     </script>
+    <a href="javascript:void(0);" class="sos-btn" id="sosButton" title="Single click: Request Form | Double click: Call 1115">
+        <div class="pulse-ring"></div>
+        <div class="sos-content">
+            <span class="sos-text">SOS</span>
+            <span class="sos-number">1115</span>
+        </div>
+    </a>
+
+    <script>
+        (function() {
+            const sosBtn = document.getElementById('sosButton');
+            let clickTimer = null;
+            
+            sosBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if (clickTimer === null) {
+                    // First click: start a timer
+                    clickTimer = setTimeout(function() {
+                        clickTimer = null;
+                        // Single click action: Go to request form
+                        window.location.href = "{% url 'request_blood' %}";
+                    }, 300); // 300ms window for double click
+                } else {
+                    // Second click within 300ms: clear timer and trigger call
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                    window.location.href = "tel:1115";
+                }
+            });
+        })();
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

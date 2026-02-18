@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}RaktaPulse Dashboard - Lifeline of the Community{% endblock %}
+{% block title %}{% trans "RaktaPulse Dashboard" %} - {% trans "Lifeline of the Community" %}{% endblock %}
 
 {% block head %}
 <style>
@@ -13,6 +14,16 @@
         position: relative;
         overflow: hidden;
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: block;
+        color: inherit;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(230, 57, 70, 0.1);
+        border-color: var(--pulse-red);
+        cursor: pointer;
     }
     .stat-card .icon-box {
         width: 48px;
@@ -103,30 +114,54 @@
     <!-- Welcome Header -->
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="brand-font mb-1">RaktaPulse Community Dashboard</h2>
-            <p class="text-secondary">Overview of blood donation activity and requirements in your area.</p>
+            <h2 class="brand-font mb-1">{% trans "RaktaPulse Community Dashboard" %}</h2>
+            <p class="text-secondary">{% trans "Overview of blood donation activity and requirements in your area." %}</p>
         </div>
     </div>
+
+    {% if involved_events %}
+    <!-- Active involvements / Message section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card border-start border-primary border-4 bg-primary bg-opacity-10">
+                <h5 class="brand-font mb-3"><i class="bi bi-chat-dots-fill me-2"></i>{% trans "Action Required: Donations in Progress" %}</h5>
+                <div class="row g-3">
+                    {% for event in involved_events %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded bg-white shadow-sm">
+                            <p class="mb-2"><strong>{{ event.donor.name }}</strong> is helping <strong>{{ event.request.patient_name }}</strong></p>
+                            <div class="d-flex justify-content-between">
+                                <span class="small text-muted">{{ event.date|date:"M d, Y" }}</span>
+                                <a href="{% url 'complete_donation' event.id %}" class="btn btn-sm btn-success px-3 rounded-pill">{% trans "Mark Completed" %}</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Quick Stats -->
     <div class="row g-4 mb-5">
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+            <a href="{% url 'donor_list' %}" class="stat-card">
                 <div class="icon-box bg-danger bg-opacity-10 text-danger">
                     <i class="bi bi-people"></i>
                 </div>
                 <div class="stat-value">{{ stats.total_donors }}</div>
-                <div class="stat-label">Registered Donors</div>
-            </div>
+                <div class="stat-label">{% trans "Registered Donors" %}</div>
+            </a>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
+            <a href="{% url 'blood_request_list' %}?status=Active" class="stat-card">
                 <div class="icon-box bg-warning bg-opacity-10 text-warning">
                     <i class="bi bi-activity"></i>
                 </div>
                 <div class="stat-value">{{ stats.active_requests }}</div>
-                <div class="stat-label">Active Requests</div>
-            </div>
+                <div class="stat-label">{% trans "Active Requests" %}</div>
+            </a>
         </div>
         <div class="col-xl-3 col-md-6">
             <div class="stat-card">
@@ -134,7 +169,7 @@
                     <i class="bi bi-droplet"></i>
                 </div>
                 <div class="stat-value">{{ stats.total_stock }} <small class="fs-6 fw-normal">/ {{ stats.total_capacity }}</small></div>
-                <div class="stat-label">Inventory vs Capacity</div>
+                <div class="stat-label">{% trans "Inventory vs Capacity" %}</div>
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
@@ -143,7 +178,7 @@
                     <i class="bi bi-shield-check"></i>
                 </div>
                 <div class="stat-value">{{ stats.vaccinated_percentage }}%</div>
-                <div class="stat-label">Vaccinated Donors</div>
+                <div class="stat-label">{% trans "Vaccinated Donors" %}</div>
             </div>
         </div>
     </div>
@@ -176,7 +211,7 @@
                     </div>
                     <div class="col-md-5">
                         <input type="text" name="location" class="form-control bg-light border-secondary text-dark" 
-                               placeholder="Search location (e.g. Kathmandu)..." value="{{ request.GET.location }}">
+                               placeholder="Search location (e.g. Baluwatar)..." value="{{ request.GET.location }}">
                     </div>
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-danger w-100 shadow-sm">Find</button>
@@ -307,6 +342,41 @@
             </div>
         </div>
     </div>
+
+    <!-- Blood & Vaccine Facts Section -->
+    <div class="row g-4 mt-2 mb-5">
+        <div class="col-12">
+            <div class="glass-card">
+                <h4 class="brand-font mb-4"><i class="bi bi-info-circle text-danger me-2"></i>Blood & Vaccine Facts</h4>
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="p-3 border border-light rounded-4 h-100 bg-light bg-opacity-10">
+                            <h6 class="fw-bold text-danger"><i class="bi bi-droplet-fill me-2"></i>Lifesaver</h6>
+                            <p class="small text-secondary mb-0">A single blood donation can save up to three lives. Your contribution has a massive impact on the community.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border border-light rounded-4 h-100 bg-light bg-opacity-10">
+                            <h6 class="fw-bold text-danger"><i class="bi bi-shield-check me-2"></i>Vaccines & Donation</h6>
+                            <p class="small text-secondary mb-0">Most vaccines (like COVID-19 or Flu) don't stop you from donating if you feel well. Stay protected and keep saving lives!</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border border-light rounded-4 h-100 bg-light bg-opacity-10">
+                            <h6 class="fw-bold text-danger"><i class="bi bi-award me-2"></i>Universal Type</h6>
+                            <p class="small text-secondary mb-0">O-Negative is the universal donor type. It's vital for emergency rooms and trauma centers during critical hours.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border border-light rounded-4 h-100 bg-light bg-opacity-10">
+                            <h6 class="fw-bold text-danger"><i class="bi bi-lightning-charge me-2"></i>Quick Recovery</h6>
+                            <p class="small text-secondary mb-0">Your body replaces blood plasma within 24-48 hours. Just stay hydrated and have a light snack after your donation!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -365,15 +435,15 @@
     });
 
     function initMap() {
-        map = L.map('map').setView([27.7172, 85.3240], 12); // Centered on Kathmandu
+        map = L.map('map').setView([27.7226, 85.3312], 14); // Centered on Baluwatar, Kathmandu
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
         // Add dummy markers for donors
         {% for donor in donors %}
-            // Randomly offset from center for demo (within Nepal context)
-            L.marker([27.7172 + (Math.random() - 0.5) * 0.1, 85.3240 + (Math.random() - 0.5) * 0.1])
+            // Randomly offset from center for demo
+            L.marker([27.7226 + (Math.random() - 0.5) * 0.05, 85.3312 + (Math.random() - 0.5) * 0.05])
                 .addTo(map)
                 .bindPopup("<b>{{ donor.name }}</b><br>{{ donor.blood_group }} - {{ donor.location }}");
         {% endfor %}

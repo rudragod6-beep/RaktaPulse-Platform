@@ -1,12 +1,13 @@
 import os
 import platform
+from django.db import models
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS
+from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS, DonationEvent, Notification, Feedback
 from .forms import UserUpdateForm, ProfileUpdateForm
 import math
 
@@ -135,6 +136,15 @@ def home(request):
         "project_name": "RaktaPulse",
         "current_time": timezone.now(),
     }
+    
+    if request.user.is_authenticated:
+        # Get active involvements (where user is donor or requester)
+        involved_events = DonationEvent.objects.filter(
+            (models.Q(donor_user=request.user) | models.Q(request__user=request.user)),
+            is_completed=False
+        )
+        context["involved_events"] = involved_events
+
     return render(request, "core/index.html", context)
 
 def donor_list(request):
@@ -173,9 +183,15 @@ def donor_list(request):
     return render(request, 'core/donor_list.html', context)
 
 def blood_request_list(request):
-    requests = BloodRequest.objects.all().order_by('-created_at')
+    status = request.GET.get('status', '')
+    requests = BloodRequest.objects.all()
+    if status:
+        requests = requests.filter(status=status)
+    
+    requests = requests.order_by('-created_at')
     context = {
         'requests': requests,
+        'current_status': status,
     }
     return render(request, 'core/blood_request_list.html', context)
 
@@ -242,6 +258,7 @@ def request_blood(request):
         
         if patient_name and blood_group and hospital and contact_number:
             BloodRequest.objects.create(
+                user=request.user if request.user.is_authenticated else None,
                 patient_name=patient_name,
                 blood_group=blood_group,
                 location=location,
@@ -297,3 +314,106 @@ def add_vaccination(request):
             messages.error(request, "Please fill in all required fields.")
             
     return render(request, 'core/add_vaccination.html')
+
+@login_required
+def volunteer_for_request(request, request_id):
+    blood_request = BloodRequest.objects.get(id=request_id)
+    donor_profile = getattr(request.user, 'donor_profile', None)
+    
+    if not donor_profile:
+        messages.error(request, "You need to be registered as a donor to volunteer.")
+        return redirect('donor_list')
+    
+    # Check if already volunteered
+    if DonationEvent.objects.filter(donor=donor_profile, request=blood_request).exists():
+        messages.warning(request, "You have already volunteered for this request.")
+    else:
+        DonationEvent.objects.create(
+            donor=donor_profile,
+            request=blood_request,
+            donor_user=request.user
+        )
+        messages.success(request, "Thank you for volunteering! The requester has been notified.")
+        
+        # Notify the requester
+        if blood_request.user:
+            Notification.objects.create(
+                user=blood_request.user,
+                message=f"Donor {request.user.username} has volunteered to help {blood_request.patient_name}!"
+            )
+            
+    return redirect('blood_request_list')
+
+@login_required
+def complete_donation(request, event_id):
+    event = DonationEvent.objects.get(id=event_id)
+    # Only the requester or the donor can mark as complete (for simplicity, letting both)
+    if request.user == event.donor_user or (event.request.user and request.user == event.request.user):
+        event.is_completed = True
+        event.save()
+        
+        # Notify both
+        Notification.objects.create(
+            user=event.donor_user,
+            message=f"Thank you for your donation to {event.request.patient_name}! Your feedback is valuable to us."
+        )
+        if event.request.user:
+            Notification.objects.create(
+                user=event.request.user,
+                message=f"We hope the donation for {event.request.patient_name} went well. Please share your feedback!"
+            )
+        
+        messages.success(request, "Donation marked as completed. Thank you!")
+    else:
+        messages.error(request, "You are not authorized to complete this event.")
+        
+    return redirect('home')
+
+@login_required
+def submit_feedback(request):
+    if request.method == "POST":
+        content = request.POST.get('content')
+        rating = request.POST.get('rating')
+        if content:
+            Feedback.objects.create(
+                user=request.user,
+                content=content,
+                rating=rating if rating else 5
+            )
+            messages.success(request, "Thank you for your feedback!")
+            return redirect('home')
+    return render(request, 'core/feedback.html')
+
+@login_required
+def notifications_view(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    # Mark as read when viewed
+    notifications.filter(is_read=False).update(is_read=True)
+    return render(request, 'core/notifications.html', {'notifications': notifications})
+
+@login_required
+def register_donor(request):
+    if hasattr(request.user, 'donor_profile'):
+        messages.info(request, "You are already registered as a donor.")
+        return redirect('profile')
+        
+    if request.method == "POST":
+        blood_group = request.POST.get('blood_group')
+        location = request.POST.get('location')
+        phone = request.POST.get('phone')
+        
+        if blood_group and phone:
+            Donor.objects.create(
+                user=request.user,
+                name=request.user.username,
+                blood_group=blood_group,
+                location=location,
+                phone=phone,
+                is_available=True
+            )
+            messages.success(request, "Congratulations! You are now a registered donor.")
+            return redirect('donor_list')
+        else:
+            messages.error(request, "Please fill in all required fields.")
+            
+    return render(request, 'core/register_donor.html', {'blood_groups': [g[0] for g in BLOOD_GROUPS]})
