@@ -121,7 +121,7 @@
         <div class="col-md-5 text-md-end mt-3 mt-md-0">
             <div class="d-flex flex-wrap gap-2 justify-content-md-end">
                 {% for badge in user_badges %}
-                <div class="badge-item d-flex align-items-center gap-2 px-3 py-2 bg-white rounded-pill border shadow-sm" title="{{ badge.description }}">
+                <div class="badge-item d-flex align-items-center gap-2 px-3 py-2 bg-white rounded-pill border shadow-sm {% if badge.name == 'First-Time Donor' %}d-md-none{% endif %}" title="{{ badge.description }}">
                     <i class="{{ badge.icon_class }} text-warning"></i>
                     <span class="small fw-bold text-dark">{{ badge.name }}</span>
                 </div>
@@ -344,6 +344,17 @@
                         </div>
                         <h6 class="mb-1 text-dark">{{ req.patient_name }}</h6>
                         <p class="text-secondary extra-small mb-2"><i class="bi bi-hospital me-1"></i> {{ req.hospital }}</p>
+                        
+                        {% with acceptance=req.donations.first %}
+                        {% if acceptance %}
+                        <div class="mb-2 p-1 px-2 rounded bg-success bg-opacity-10">
+                            <p class="mb-0 extra-small text-success">
+                                <i class="bi bi-person-check-fill me-1"></i>
+                                Accepted by: <strong>{{ acceptance.donor.name }}</strong>
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted" style="font-size: 0.7rem;">{{ req.created_at|timesince }} ago</small>
                             <div class="d-flex gap-2 align-items-center">

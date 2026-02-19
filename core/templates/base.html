@@ -281,9 +281,10 @@
                 <li class="{% if request.resolver_match.url_name == 'vaccination_info' %}active{% endif %}"><a href="{% url 'vaccination_info' %}"><i class="bi bi-shield-check"></i> {% trans "Vaccination" %}</a></li>
                 {% if user.is_authenticated %}
                 <li class="{% if 'vaccination_dashboard' in request.resolver_match.url_name or 'add_vaccination' in request.resolver_match.url_name %}active{% endif %}"><a href="{% url 'vaccination_dashboard' %}"><i class="bi bi-journal-check"></i> {% trans "My Records" %}</a></li>
-                <li class="{% if 'health_report' in request.resolver_match.url_name %}active{% endif %}"><a href="{% url 'health_report_list' %}"><i class="bi bi-file-medical-fill text-danger"></i> {% trans "Health Reports" %}</a></li>
                 {% endif %}
+                {% if user.is_superuser %}
                 <li><a href="/admin/"><i class="bi bi-gear-fill"></i> {% trans "Settings" %}</a></li>
+                {% endif %}
             </ul>
         </nav>
 
@@ -295,10 +296,12 @@
                     <button type="button" id="sidebarCollapse" class="btn btn-link text-danger me-3 p-0">
                         <i class="bi bi-list fs-3"></i>
                     </button>
-                    <div class="search-box d-none d-lg-flex">
-                        <i class="bi bi-search text-secondary"></i>
-                        <input type="text" placeholder="Search anything...">
-                    </div>
+                    <form action="{% url 'donor_list' %}" method="GET" class="search-box d-none d-lg-flex">
+                        <button type="submit" class="btn btn-link p-0 text-secondary border-0">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <input type="text" name="q" placeholder="Search anything..." value="{{ request.GET.q }}">
+                    </form>
                 </div>
                 
                 <div class="d-flex align-items-center gap-2 gap-md-4">

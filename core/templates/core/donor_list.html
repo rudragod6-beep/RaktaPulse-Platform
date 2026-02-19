@@ -15,6 +15,10 @@
     <div class="glass-card mb-4">
         <form method="GET" id="donorFilterForm" class="row g-3 mb-4">
             <div class="col-md-3">
+                <input type="text" name="q" class="form-control bg-light border-secondary text-dark" 
+                       placeholder="Search name or location..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-2">
                 <select name="blood_group" class="form-select bg-light border-secondary text-dark">
                     <option value="">All Blood Groups</option>
                     {% for group in blood_groups %}
@@ -22,9 +26,9 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <input type="text" name="district" class="form-control bg-light border-secondary text-dark" 
-                       placeholder="Search district (e.g. Kathmandu)..." value="{{ request.GET.district }}">
+                       placeholder="District..." value="{{ request.GET.district }}">
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-danger w-100 shadow-sm">Filter</button>
@@ -34,8 +38,8 @@
                     <i class="bi bi-geo-alt-fill me-1"></i> Nearest
                 </button>
             </div>
-            <div class="col-md-2">
-                <a href="{% url 'donor_list' %}" class="btn btn-outline-secondary w-100">Reset</a>
+            <div class="col-md-1">
+                <a href="{% url 'donor_list' %}" class="btn btn-outline-secondary w-100 px-0" title="Reset">Reset</a>
             </div>
             <input type="hidden" name="lat" id="latInput" value="{{ request.GET.lat }}">
             <input type="hidden" name="lng" id="lngInput" value="{{ request.GET.lng }}">

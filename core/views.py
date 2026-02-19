@@ -314,12 +314,15 @@ def home(request):
     return render(request, "core/index.html", context)
 
 def donor_list(request):
+    query = request.GET.get('q', '')
     blood_group = request.GET.get('blood_group', '')
     district = request.GET.get('district', '')
     user_lat = request.GET.get('lat')
     user_lng = request.GET.get('lng')
     
     donors = Donor.objects.all()
+    if query:
+        donors = donors.filter(Q(name__icontains=query) | Q(location__icontains=query))
     if blood_group:
         donors = donors.filter(blood_group=blood_group)
     if district:
@@ -449,10 +452,13 @@ def request_blood(request):
     return render(request, 'core/request_blood.html', context)
 
 @login_required
+@login_required
 def vaccination_dashboard(request):
     records = VaccineRecord.objects.filter(user=request.user).order_by('-date_taken')
+    reports = HealthReport.objects.filter(user=request.user).order_by('-report_date')
     context = {
         'records': records,
+        'reports': reports,
         'project_name': "RaktaPulse",
     }
     return render(request, 'core/vaccination_dashboard.html', context)
@@ -466,6 +472,7 @@ def add_vaccination(request):
         location = request.POST.get('location')
         center_name = request.POST.get('center_name')
         notes = request.POST.get('notes')
+        photo = request.FILES.get('photo')
         
         if vaccine_name and dose_number and date_taken:
             VaccineRecord.objects.create(
@@ -475,7 +482,8 @@ def add_vaccination(request):
                 date_taken=date_taken,
                 location=location,
                 center_name=center_name,
-                notes=notes
+                notes=notes,
+                photo=photo
             )
             messages.success(request, "Vaccination record added successfully!")
             return redirect('vaccination_dashboard')
@@ -492,6 +500,11 @@ def volunteer_for_request(request, request_id):
     if not donor_profile:
         messages.error(request, "You need to be registered as a donor to volunteer.")
         return redirect('donor_list')
+    
+    # Prevent requester from volunteering for their own request
+    if blood_request.user == request.user:
+        messages.error(request, "You cannot volunteer for your own blood request.")
+        return redirect('blood_request_list')
     
     # Check if already volunteered
     if DonationEvent.objects.filter(donor=donor_profile, request=blood_request).exists():
@@ -670,11 +683,6 @@ def chat(request, username):
     return render(request, 'core/chat.html', {'other_user': other_user, 'chat_messages': messages})
 
 @login_required
-def health_report_list(request):
-    reports = HealthReport.objects.filter(user=request.user).order_by('-report_date')
-    return render(request, 'core/health_report_list.html', {'reports': reports})
-
-@login_required
 def upload_health_report(request):
     if request.method == "POST":
         title = request.POST.get('title')
@@ -697,7 +705,7 @@ def upload_health_report(request):
                 allow_notifications=allow_notifications
             )
             messages.success(request, "Health report uploaded successfully!")
-            return redirect('health_report_list')
+            return redirect('vaccination_dashboard')
         else:
             messages.error(request, "Please fill in all required fields.")
             

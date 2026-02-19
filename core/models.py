@@ -65,6 +65,7 @@ class VaccineRecord(models.Model):
     location = models.CharField(max_length=255)
     center_name = models.CharField(max_length=255, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
+    photo = models.ImageField(upload_to='vaccine_photos/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

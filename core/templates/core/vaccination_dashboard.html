@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}My Vaccination Records - {{ project_name }}{% endblock %}
+{% block title %}My Records - {{ project_name }}{% endblock %}
 
 {% block head %}
 <style>
-    .vaccine-card {
+    .record-card {
         background: #ffffff;
         border-radius: 15px;
         padding: 20px;
@@ -13,11 +13,11 @@
         transition: transform 0.2s, box-shadow 0.2s;
         margin-bottom: 20px;
     }
-    .vaccine-card:hover {
+    .record-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.05);
     }
-    .dose-badge {
+    .status-badge {
         background: var(--pulse-red-light);
         color: var(--pulse-red);
         font-weight: 700;
@@ -35,6 +35,27 @@
         align-items: center;
         gap: 5px;
     }
+    .nav-tabs-custom .nav-link {
+        border: none;
+        color: #6c757d;
+        font-weight: 600;
+        padding: 1rem 1.5rem;
+        position: relative;
+    }
+    .nav-tabs-custom .nav-link.active {
+        color: var(--pulse-red);
+        background: transparent;
+    }
+    .nav-tabs-custom .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: var(--pulse-red);
+        border-radius: 3px 3px 0 0;
+    }
 </style>
 {% endblock %}
 
@@ -42,12 +63,17 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="brand-font mb-1 text-dark">Vaccination Journey</h2>
-            <p class="text-secondary">Track and manage your immunization history safely.</p>
+            <h2 class="brand-font mb-1 text-dark">Health & Records</h2>
+            <p class="text-secondary">Manage your vaccinations and hospital reports in one place.</p>
         </div>
-        <a href="{% url 'add_vaccination' %}" class="btn btn-danger rounded-pill px-4 shadow-sm">
-            <i class="bi bi-plus-lg me-2"></i>Add New Record
-        </a>
+        <div id="action-buttons">
+            <a href="{% url 'add_vaccination' %}" class="btn btn-outline-danger rounded-pill px-4 shadow-sm me-2" id="btn-add-vaccination">
+                <i class="bi bi-shield-plus me-2"></i>Add Vaccination
+            </a>
+            <a href="{% url 'upload_health_report' %}" class="btn btn-danger rounded-pill px-4 shadow-sm d-none" id="btn-upload-report">
+                <i class="bi bi-file-earmark-medical me-2"></i>Upload Report
+            </a>
+        </div>
     </div>
 
     {% if messages %}
@@ -62,42 +88,141 @@
     </div>
     {% endif %}
 
-    <div class="row">
-        {% for record in records %}
-        <div class="col-md-6 col-lg-4">
-            <div class="vaccine-card shadow-sm">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h5 class="fw-bold mb-0 text-dark">{{ record.vaccine_name }}</h5>
-                    <span class="dose-badge">Dose {{ record.dose_number }}</span>
-                </div>
-                
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                    <span class="date-badge"><i class="bi bi-calendar-event"></i> {{ record.date_taken|date:"M d, Y" }}</span>
-                    <span class="date-badge"><i class="bi bi-geo-alt"></i> {{ record.center_name|default:record.location }}</span>
-                </div>
+    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="recordTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="vaccinations-tab" data-bs-toggle="tab" data-bs-target="#vaccinations" type="button" role="tab" aria-controls="vaccinations" aria-selected="true">
+                <i class="bi bi-shield-check me-2"></i>Vaccinations
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="false">
+                <i class="bi bi-file-earmark-text me-2"></i>Hospital Reports
+            </button>
+        </li>
+    </ul>
 
-                <div class="mt-2 border-top pt-2">
-                    <p class="text-secondary small mb-0">
-                        <strong>Location:</strong> {{ record.location }}
-                    </p>
-                    {% if record.notes %}
-                    <p class="text-secondary small mt-2 mb-0">
-                        <i class="bi bi-sticky me-1"></i> {{ record.notes|truncatechars:100 }}
-                    </p>
-                    {% endif %}
+    <div class="tab-content" id="recordTabsContent">
+        <!-- Vaccinations Tab -->
+        <div class="tab-pane fade show active" id="vaccinations" role="tabpanel" aria-labelledby="vaccinations-tab">
+            <div class="row">
+                {% for record in records %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="record-card shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">{{ record.vaccine_name }}</h5>
+                            <span class="status-badge">Dose {{ record.dose_number }}</span>
+                        </div>
+                        
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="date-badge"><i class="bi bi-calendar-event"></i> {{ record.date_taken|date:"M d, Y" }}</span>
+                            <span class="date-badge"><i class="bi bi-geo-alt"></i> {{ record.center_name|default:record.location }}</span>
+                        </div>
+
+                        {% if record.photo %}
+                        <div class="mb-3">
+                            <a href="{{ record.photo.url }}" target="_blank" class="btn btn-sm btn-light w-100 rounded-pill border-secondary">
+                                <i class="bi bi-image me-1"></i> View Certificate
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-2 border-top pt-2">
+                            <p class="text-secondary small mb-0">
+                                <strong>Location:</strong> {{ record.location }}
+                            </p>
+                            {% if record.notes %}
+                            <p class="text-secondary small mt-2 mb-0">
+                                <i class="bi bi-sticky me-1"></i> {{ record.notes|truncatechars:100 }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <div class="glass-card py-5">
+                        <i class="bi bi-shield-slash fs-1 text-secondary opacity-25"></i>
+                        <h4 class="mt-3 text-dark">No vaccination records</h4>
+                        <p class="text-secondary">Keep track of your immunizations.</p>
+                        <a href="{% url 'add_vaccination' %}" class="btn btn-outline-danger mt-2 rounded-pill px-4">Add Record</a>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
-        {% empty %}
-        <div class="col-12 text-center py-5">
-            <div class="glass-card py-5">
-                <i class="bi bi-shield-slash fs-1 text-secondary opacity-25"></i>
-                <h4 class="mt-3 text-dark">No records found</h4>
-                <p class="text-secondary">Start tracking your vaccinations today to keep your community safe.</p>
-                <a href="{% url 'add_vaccination' %}" class="btn btn-outline-danger mt-2 rounded-pill px-4">Add Your First Record</a>
+
+        <!-- Health Reports Tab -->
+        <div class="tab-pane fade" id="reports" role="tabpanel" aria-labelledby="reports-tab">
+            <div class="row">
+                {% for report in reports %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="record-card shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">{{ report.title }}</h5>
+                            <a href="{{ report.report_file.url }}" target="_blank" class="btn btn-sm btn-outline-danger rounded-circle">
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
+                        
+                        <p class="text-muted small mb-3"><i class="bi bi-hospital me-1"></i> {{ report.hospital_name }}</p>
+
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="date-badge"><i class="bi bi-calendar-check"></i> {{ report.report_date|date:"M d, Y" }}</span>
+                            {% if report.next_test_date %}
+                            <span class="date-badge text-danger fw-bold"><i class="bi bi-bell"></i> Next: {{ report.next_test_date|date:"M d, Y" }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if report.description %}
+                        <p class="text-secondary small mb-3">{{ report.description|truncatechars:120 }}</p>
+                        {% endif %}
+
+                        <div class="mt-2 border-top pt-2 d-flex justify-content-between align-items-center">
+                            <span class="small {% if report.allow_notifications %}text-success{% else %}text-muted{% endif %}">
+                                <i class="bi {% if report.allow_notifications %}bi-bell-fill{% else %}bi-bell-slash{% endif %}"></i>
+                                {% if report.allow_notifications %}Notifications On{% else %}Notifications Off{% endif %}
+                            </span>
+                            <span class="text-secondary smaller">{{ report.created_at|timesince }} ago</span>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <div class="glass-card py-5">
+                        <i class="bi bi-file-earmark-medical fs-1 text-secondary opacity-25"></i>
+                        <h4 class="mt-3 text-dark">No hospital reports</h4>
+                        <p class="text-secondary">Upload your medical reports for safekeeping and reminders.</p>
+                        <a href="{% url 'upload_health_report' %}" class="btn btn-outline-danger mt-2 rounded-pill px-4">Upload First Report</a>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const vaccinationsTab = document.getElementById('vaccinations-tab');
+        const reportsTab = document.getElementById('reports-tab');
+        const btnAddVaccination = document.getElementById('btn-add-vaccination');
+        const btnUploadReport = document.getElementById('btn-upload-report');
+
+        vaccinationsTab.addEventListener('shown.bs.tab', function() {
+            btnAddVaccination.classList.remove('d-none');
+            btnUploadReport.classList.add('d-none');
+        });
+
+        reportsTab.addEventListener('shown.bs.tab', function() {
+            btnAddVaccination.classList.add('d-none');
+            btnUploadReport.classList.remove('d-none');
+        });
+        
+        // Handle initial state if needed
+        if (window.location.hash === '#reports') {
+            const tab = new bootstrap.Tab(reportsTab);
+            tab.show();
+        }
+    });
+</script>
 {% endblock %}

@@ -8,7 +8,7 @@ from .views import (
     complete_donation, notifications_view,
     register_donor, hospital_list, public_profile, inbox, chat,
     update_location, emergency_sms, delete_personal_info,
-    health_report_list, upload_health_report
+    upload_health_report
 )
 
 urlpatterns = [
@@ -27,7 +27,6 @@ urlpatterns = [
     path("vaccination/", vaccination_info, name="vaccination_info"),
     path("vaccination/dashboard/", vaccination_dashboard, name="vaccination_dashboard"),
     path("vaccination/add/", add_vaccination, name="add_vaccination"),
-    path("reports/", health_report_list, name="health_report_list"),
     path("reports/upload/", upload_health_report, name="upload_health_report"),
     path("live-map/", live_map, name="live_map"),
     path("request-blood/", request_blood, name="request_blood"),

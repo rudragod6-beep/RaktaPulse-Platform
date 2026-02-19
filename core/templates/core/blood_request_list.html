@@ -49,6 +49,17 @@
                     <h5 class="mb-1 fw-bold text-dark">{{ req.patient_name }}</h5>
                     <p class="text-secondary small mb-2"><i class="bi bi-hospital me-1"></i> {{ req.hospital }}</p>
                     
+                    {% with acceptance=req.donations.first %}
+                    {% if acceptance %}
+                    <div class="mb-2 p-2 rounded bg-success bg-opacity-10 border border-success border-opacity-25">
+                        <p class="mb-0 small text-success">
+                            <i class="bi bi-person-check-fill me-1"></i>
+                            Accepted by: <strong>{{ acceptance.donor.name }}</strong>
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    
                     {% if req.image %}
                     <div class="mb-3">
                         <img src="{{ req.image.url }}" class="img-fluid rounded border shadow-sm" alt="Patient/Prescription" style="max-height: 150px; width: 100%; object-fit: cover; cursor: pointer;" onclick="window.open(this.src)">
@@ -64,7 +75,9 @@
                                         <i class="bi bi-chat-dots-fill"></i>
                                     </a>
                                 {% endif %}
+                                {% if user.is_authenticated and user.donor_profile and req.user != user %}
                                 <a href="{% url 'volunteer_for_request' req.id %}" class="btn btn-sm btn-outline-danger px-3 rounded-pill">Volunteer</a>
+                                {% endif %}
                                 <a href="tel:{{ req.contact_number }}" class="btn btn-sm btn-danger px-3 rounded-pill">Call</a>
                             </div>
                         </div>
