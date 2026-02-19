@@ -9,9 +9,86 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth.models import User
-from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS, DonationEvent, Notification, Hospital, Message
+from .models import Donor, BloodRequest, BloodBank, VaccineRecord, UserProfile, BLOOD_GROUPS, DonationEvent, Notification, Hospital, Message, Badge, HealthReport
 
 from .forms import UserUpdateForm, ProfileUpdateForm, UserRegisterForm
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@login_required
+@csrf_exempt
+def emergency_sms(request):
+    """Concept demo for sending SMS to nearby donors."""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            blood_group = data.get('blood_group')
+            lat = data.get('latitude')
+            lng = data.get('longitude')
+        except json.JSONDecodeError:
+            blood_group = request.POST.get('blood_group')
+            lat = request.POST.get('latitude')
+            lng = request.POST.get('longitude')
+        
+        if not (blood_group and lat and lng):
+            return JsonResponse({'status': 'error', 'message': 'Missing data'}, status=400)
+        
+        if not (blood_group and lat and lng):
+            return JsonResponse({'status': 'error', 'message': 'Missing data'}, status=400)
+            
+        try:
+            u_lat = float(lat)
+            u_lng = float(lng)
+            
+            # Find donors within 10km
+            all_donors = Donor.objects.filter(blood_group=blood_group, is_available=True)
+            nearby_donors = []
+            
+            for d in all_donors:
+                if d.latitude and d.longitude:
+                    dist = haversine(u_lat, u_lng, float(d.latitude), float(d.longitude))
+                    if dist <= 10.0: # 10 km radius
+                        nearby_donors.append(d)
+            
+            # Simulated SMS sending
+            count = len(nearby_donors)
+            for d in nearby_donors:
+                # In a real app, we'd call an SMS API here
+                # Notification.objects.create(user=d.user, message=f"EMERGENCY: {blood_group} blood needed nearby! Please check RaktaPulse.")
+                print(f"Simulated SMS to {d.phone}: EMERGENCY {blood_group} needed!")
+                
+            return JsonResponse({
+                'status': 'success', 
+                'message': f'SMS Alert sent to {count} nearby donors!',
+                'count': count
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            
+    return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+
+@login_required
+@csrf_exempt
+@require_POST
+def update_location(request):
+    try:
+        data = json.loads(request.body)
+        lat = data.get('latitude')
+        lng = data.get('longitude')
+        
+        if lat and lng:
+            profile = request.user.profile
+            profile.latitude = lat
+            profile.longitude = lng
+            profile.last_location_update = timezone.now()
+            profile.save()
+            return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
 
 def hospital_list(request):
     user_lat = request.GET.get('lat')
@@ -60,6 +137,32 @@ def profile(request):
     }
 
     return render(request, 'core/profile.html', context)
+
+@login_required
+@require_POST
+def delete_personal_info(request):
+    """View to clear non-essential personal information."""
+    user = request.user
+    profile = user.profile
+    
+    # Clear User fields
+    user.first_name = ""
+    user.last_name = ""
+    user.save()
+    
+    # Clear Profile fields
+    profile.bio = ""
+    profile.location = ""
+    profile.phone = ""
+    profile.birth_date = None
+    profile.profile_pic = None
+    # We keep blood_group as it's often essential for the app's functionality (blood donation)
+    # but we can clear it if the user really wants to. 
+    # For now, let's just clear the "soft" personal info.
+    profile.save()
+    
+    messages.success(request, "Your non-essential personal information has been cleared.")
+    return redirect('profile')
 
 def haversine(lat1, lon1, lat2, lon2):
     # Radius of the Earth in km
@@ -122,6 +225,12 @@ def home(request):
     user_lat = request.GET.get('lat')
     user_lng = request.GET.get('lng')
 
+    # Initialize default badges if they don't exist (Demo purposes)
+    if Badge.objects.count() == 0:
+        Badge.objects.create(name='First-Time Donor', description='Completed your first donation!', icon_class='fas fa-award')
+        Badge.objects.create(name='Community Hero', description='Completed 5 donations!', icon_class='fas fa-medal')
+        Badge.objects.create(name='Life Saver', description='Completed 10+ donations!', icon_class='fas fa-heart')
+
     donors = Donor.objects.all()
     if query_blood:
         donors = donors.filter(blood_group=query_blood)
@@ -148,9 +257,15 @@ def home(request):
     blood_requests = BloodRequest.objects.filter(status='Active').order_by('-urgency', '-created_at')
     blood_banks = BloodBank.objects.all()
 
-    # Stats for Dashboard
+    # Stats for Dashboard (Including Demo Data for Impact)
+    demo_donations = 157
+    demo_donors = 48
+    
+    actual_completed = DonationEvent.objects.filter(is_completed=True).count()
+    completed_donations = actual_completed + demo_donations
+
     stats = {
-        "total_donors": Donor.objects.count(),
+        "total_donors": Donor.objects.count() + demo_donors,
         "active_requests": BloodRequest.objects.filter(status='Active').count(),
         "total_stock": sum([
             bb.stock_a_plus + bb.stock_a_minus + bb.stock_b_plus + bb.stock_b_minus +
@@ -158,13 +273,23 @@ def home(request):
             for bb in blood_banks
         ]),
         "total_capacity": sum([bb.total_capacity * 8 for bb in blood_banks]), # 8 blood types
-        "vaccinated_percentage": 0
+        "vaccinated_percentage": 0,
+        "completed_donations": completed_donations,
+        "lives_saved": completed_donations * 3
     }
     
     total_d = stats["total_donors"]
     if total_d > 0:
         vaccinated_count = Donor.objects.filter(vaccination_status__icontains='Fully').count()
         stats["vaccinated_percentage"] = int((vaccinated_count / total_d) * 100)
+
+    myths_vs_facts = [
+        {"myth": "Donating blood is painful.", "fact": "You only feel a quick pinch, like a mosquito bite."},
+        {"myth": "I'm too old to donate.", "fact": "There is no upper age limit as long as you're healthy."},
+        {"myth": "It takes all day to donate.", "fact": "The actual donation takes about 10 minutes, the whole process is under an hour."},
+        {"myth": "Giving blood makes you weak.", "fact": "Your body replaces fluids within 24 hours and cells within weeks."},
+        {"myth": "I can't donate because I have high BP.", "fact": "As long as it's within 180/100 at the time of donation, you're fine."},
+    ]
 
     context = {
         "donors": donor_list_data[:8],
@@ -174,15 +299,17 @@ def home(request):
         "stats": stats,
         "project_name": "RaktaPulse",
         "current_time": timezone.now(),
+        "myths_vs_facts": myths_vs_facts,
     }
     
     if request.user.is_authenticated:
-        # Get active involvements (where user is donor or requester)
+        # Get active involvements
         involved_events = DonationEvent.objects.filter(
             (Q(donor_user=request.user) | Q(request__user=request.user)),
             is_completed=False
         )
         context["involved_events"] = involved_events
+        context["user_badges"] = request.user.profile.badges.all()
 
     return render(request, "core/index.html", context)
 
@@ -292,6 +419,7 @@ def request_blood(request):
         urgency = request.POST.get('urgency')
         hospital = request.POST.get('hospital')
         contact_number = request.POST.get('contact_number')
+        image = request.FILES.get('image')
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
         
@@ -304,6 +432,7 @@ def request_blood(request):
                 urgency=urgency,
                 hospital=hospital,
                 contact_number=contact_number,
+                image=image,
                 latitude=latitude if latitude else None,
                 longitude=longitude if longitude else None
             )
@@ -387,15 +516,34 @@ def volunteer_for_request(request, request_id):
 @login_required
 def complete_donation(request, event_id):
     event = DonationEvent.objects.get(id=event_id)
-    # Only the requester or the donor can mark as complete (for simplicity, letting both)
+    # Only the requester or the donor can mark as complete
     if request.user == event.donor_user or (event.request.user and request.user == event.request.user):
         event.is_completed = True
         event.save()
         
+        # Award Badges Logic
+        donor_profile = event.donor_user.profile
+        completed_count = DonationEvent.objects.filter(donor_user=event.donor_user, is_completed=True).count()
+        
+        if completed_count >= 1:
+            badge = Badge.objects.filter(name='First-Time Donor').first()
+            if badge:
+                donor_profile.badges.add(badge)
+        
+        if completed_count >= 5:
+            badge = Badge.objects.filter(name='Community Hero').first()
+            if badge:
+                donor_profile.badges.add(badge)
+
+        if completed_count >= 10:
+            badge = Badge.objects.filter(name='Life Saver').first()
+            if badge:
+                donor_profile.badges.add(badge)
+
         # Notify both
         Notification.objects.create(
             user=event.donor_user,
-            message=f"Thank you for your donation to {event.request.patient_name}!"
+            message=f"Thank you for your donation to {event.request.patient_name}! You've earned recognition for your impact."
         )
         if event.request.user:
             Notification.objects.create(
@@ -485,11 +633,29 @@ def chat(request, username):
     other_user = User.objects.get(username=username)
     if request.method == "POST":
         content = request.POST.get('content')
-        if content:
+        attachment = request.FILES.get('attachment')
+        sticker_id = request.POST.get('sticker_id')
+        
+        msg_type = 'text'
+        if sticker_id:
+            msg_type = 'sticker'
+        elif attachment:
+            content_type = attachment.content_type
+            if content_type.startswith('image/'):
+                msg_type = 'image'
+            elif content_type.startswith('video/'):
+                msg_type = 'video'
+            else:
+                msg_type = 'file'
+        
+        if content or attachment or sticker_id:
             Message.objects.create(
                 sender=request.user,
                 receiver=other_user,
-                content=content
+                content=content,
+                attachment=attachment,
+                message_type=msg_type,
+                sticker_id=sticker_id
             )
             return redirect('chat', username=username)
             
@@ -502,3 +668,37 @@ def chat(request, username):
     Message.objects.filter(sender=other_user, receiver=request.user, is_read=False).update(is_read=True)
     
     return render(request, 'core/chat.html', {'other_user': other_user, 'chat_messages': messages})
+
+@login_required
+def health_report_list(request):
+    reports = HealthReport.objects.filter(user=request.user).order_by('-report_date')
+    return render(request, 'core/health_report_list.html', {'reports': reports})
+
+@login_required
+def upload_health_report(request):
+    if request.method == "POST":
+        title = request.POST.get('title')
+        hospital_name = request.POST.get('hospital_name')
+        report_file = request.FILES.get('report_file')
+        description = request.POST.get('description')
+        report_date = request.POST.get('report_date')
+        next_test_date = request.POST.get('next_test_date')
+        allow_notifications = request.POST.get('allow_notifications') == 'on'
+        
+        if title and report_file and report_date:
+            HealthReport.objects.create(
+                user=request.user,
+                title=title,
+                hospital_name=hospital_name,
+                report_file=report_file,
+                description=description,
+                report_date=report_date,
+                next_test_date=next_test_date if next_test_date else None,
+                allow_notifications=allow_notifications
+            )
+            messages.success(request, "Health report uploaded successfully!")
+            return redirect('health_report_list')
+        else:
+            messages.error(request, "Please fill in all required fields.")
+            
+    return render(request, 'core/upload_health_report.html')

@@ -112,11 +112,23 @@
 {% block content %}
 <div class="container-fluid p-0">
     <!-- Welcome Header -->
-    <div class="row mb-4">
-        <div class="col-12">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-7">
             <h2 class="brand-font mb-1">{% trans "RaktaPulse Community Dashboard" %}</h2>
-            <p class="text-secondary">{% trans "Overview of blood donation activity and requirements in your area." %}</p>
+            <p class="text-secondary mb-0">{% trans "Overview of blood donation activity and requirements in your area." %}</p>
         </div>
+        {% if user.is_authenticated and user_badges %}
+        <div class="col-md-5 text-md-end mt-3 mt-md-0">
+            <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                {% for badge in user_badges %}
+                <div class="badge-item d-flex align-items-center gap-2 px-3 py-2 bg-white rounded-pill border shadow-sm" title="{{ badge.description }}">
+                    <i class="{{ badge.icon_class }} text-warning"></i>
+                    <span class="small fw-bold text-dark">{{ badge.name }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     {% if involved_events %}
@@ -143,42 +155,51 @@
     </div>
     {% endif %}
 
-    <!-- Quick Stats -->
+    <!-- Quick Stats & Impact Counter -->
     <div class="row g-4 mb-5">
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-md-4 col-6">
             <a href="{% url 'donor_list' %}" class="stat-card">
                 <div class="icon-box bg-danger bg-opacity-10 text-danger">
                     <i class="bi bi-people"></i>
                 </div>
                 <div class="stat-value">{{ stats.total_donors }}</div>
-                <div class="stat-label">{% trans "Registered Donors" %}</div>
+                <div class="stat-label">{% trans "Donors" %}</div>
             </a>
         </div>
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-md-4 col-6">
             <a href="{% url 'blood_request_list' %}?status=Active" class="stat-card">
                 <div class="icon-box bg-warning bg-opacity-10 text-warning">
                     <i class="bi bi-activity"></i>
                 </div>
                 <div class="stat-value">{{ stats.active_requests }}</div>
-                <div class="stat-label">{% trans "Active Requests" %}</div>
+                <div class="stat-label">{% trans "Requests" %}</div>
             </a>
         </div>
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="stat-card">
+                <div class="icon-box bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+                <div class="stat-value">{{ stats.completed_donations }}</div>
+                <div class="stat-label">{% trans "Donations" %}</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 col-6">
+            <div class="stat-card bg-danger bg-opacity-10 border-danger">
+                <div class="icon-box bg-danger text-white">
+                    <i class="bi bi-heart-fill"></i>
+                </div>
+                <div class="stat-value text-danger">{{ stats.lives_saved }}</div>
+                <div class="stat-label text-danger">{% trans "Lives Saved" %}</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 col-12">
             <div class="stat-card">
                 <div class="icon-box bg-primary bg-opacity-10 text-primary">
                     <i class="bi bi-droplet"></i>
                 </div>
                 <div class="stat-value">{{ stats.total_stock }} <small class="fs-6 fw-normal">/ {{ stats.total_capacity }}</small></div>
-                <div class="stat-label">{% trans "Inventory vs Capacity" %}</div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="icon-box bg-success bg-opacity-10 text-success">
-                    <i class="bi bi-shield-check"></i>
-                </div>
-                <div class="stat-value">{{ stats.vaccinated_percentage }}%</div>
-                <div class="stat-label">{% trans "Vaccinated Donors" %}</div>
+                <div class="stat-label">{% trans "Stock Level" %}</div>
             </div>
         </div>
     </div>
@@ -308,6 +329,12 @@
                     Urgent Requests
                     <span class="badge bg-danger rounded-pill px-2" style="font-size: 0.6rem;">HOT</span>
                 </h5>
+                
+                <!-- Emergency SMS Concept Button -->
+                <button onclick="sendEmergencyAlert()" class="btn btn-danger w-100 mb-4 py-2 rounded-pill shadow-sm">
+                    <i class="bi bi-broadcast me-2"></i>{% trans "Send Emergency SMS Alert" %}
+                </button>
+
                 <div class="request-feed">
                     {% for req in blood_requests %}
                     <div class="mb-4 border-bottom border-light pb-3">
@@ -367,36 +394,22 @@
         </div>
     </div>
 
-    <!-- Blood & Vaccine Facts Section -->
+    <!-- Myths vs Facts Section -->
     <div class="row g-4 mt-2 mb-5">
         <div class="col-12">
-            <div class="glass-card">
-                <h4 class="brand-font mb-4"><i class="bi bi-info-circle text-danger me-2"></i>Blood & Vaccine Facts</h4>
+            <div class="glass-card bg-light bg-opacity-10 border-danger">
+                <h4 class="brand-font mb-4 text-center"><i class="bi bi-question-diamond text-danger me-2"></i>{% trans "Top 5 Myths vs. Facts about Blood Donation" %}</h4>
                 <div class="row g-4">
-                    <div class="col-md-3">
-                        <div class="p-3 border border-light rounded-4 h-100 bg-light bg-opacity-10">
-                            <h6 class="fw-bold text-danger"><i class="bi bi-droplet-fill me-2"></i>Lifesaver</h6>
-                            <p class="small text-secondary mb-0">A single blood donation can save up to three lives. Your contribution has a massive impact on the community.</p>
+                    {% for item in myths_vs_facts %}
+                    <div class="col-md-4 col-lg-2 {% if forloop.first %}offset-lg-1{% endif %}">
+                        <div class="myth-fact-card p-3 h-100 bg-white rounded-4 shadow-sm border-bottom border-danger border-3">
+                            <div class="text-danger small fw-bold mb-2">{% trans "MYTH" %}</div>
+                            <p class="small text-muted mb-3 italic">"{{ item.myth }}"</p>
+                            <div class="text-success small fw-bold mb-1">{% trans "FACT" %}</div>
+                            <p class="extra-small text-dark mb-0">{{ item.fact }}</p>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="p-3 border border-light rounded-4 h-100 bg-light bg-opacity-10">
-                            <h6 class="fw-bold text-danger"><i class="bi bi-shield-check me-2"></i>Vaccines & Donation</h6>
-                            <p class="small text-secondary mb-0">Most vaccines (like COVID-19 or Flu) don't stop you from donating if you feel well. Stay protected and keep saving lives!</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 border border-light rounded-4 h-100 bg-light bg-opacity-10">
-                            <h6 class="fw-bold text-danger"><i class="bi bi-award me-2"></i>Universal Type</h6>
-                            <p class="small text-secondary mb-0">O-Negative is the universal donor type. It's vital for emergency rooms and trauma centers during critical hours.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 border border-light rounded-4 h-100 bg-light bg-opacity-10">
-                            <h6 class="fw-bold text-danger"><i class="bi bi-lightning-charge me-2"></i>Quick Recovery</h6>
-                            <p class="small text-secondary mb-0">Your body replaces blood plasma within 24-48 hours. Just stay hydrated and have a light snack after your donation!</p>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -471,6 +484,48 @@
                 .addTo(map)
                 .bindPopup("<b>{{ donor.name }}</b><br>{{ donor.blood_group }} - {{ donor.location }}");
         {% endfor %}
+    }
+
+    function sendEmergencyAlert() {
+        if (!confirm("This will simulate sending an emergency SMS to all nearby donors of a specific blood group. Continue?")) return;
+        
+        const bloodGroup = prompt("Enter the required blood group (e.g., A+, O-):", "O+");
+        if (!bloodGroup) return;
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const data = {
+                    blood_group: bloodGroup,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                };
+
+                fetch('/emergency-sms/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        alert(result.message);
+                    } else {
+                        alert("Error: " + result.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("Concept Demo: SMS API call simulated for " + bloodGroup + " donors nearby.");
+                });
+            }, function(error) {
+                alert("Error getting location: " + error.message);
+            });
+        } else {
+            alert("Geolocation is not supported.");
+        }
     }
 </script>
 {% endblock %}

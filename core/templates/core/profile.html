@@ -27,12 +27,12 @@
                     <h5 class="fw-bold mb-3 border-bottom pb-2">Account Information</h5>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Username</label>
-                            {{ u_form.username }}
+                            <label class="form-label small fw-bold text-muted">Username (Permanent)</label>
+                            <input type="text" class="form-control bg-light border-0" value="{{ user.username }}" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Email Address</label>
-                            {{ u_form.email }}
+                            <label class="form-label small fw-bold text-muted">Email Address (Permanent)</label>
+                            <input type="text" class="form-control bg-light border-0" value="{{ user.email }}" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">First Name</label>
@@ -60,21 +60,40 @@
                             {{ p_form.phone }}
                         </div>
                         <div class="col-md-4">
+                            <label class="form-label small fw-bold">Birth Date</label>
+                            {{ p_form.birth_date }}
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label small fw-bold">Location</label>
                             {{ p_form.location }}
                         </div>
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label class="form-label small fw-bold">Profile Picture</label>
                             {{ p_form.profile_pic }}
                         </div>
                     </div>
 
-                    <div class="d-grid">
+                    <div class="d-grid mb-5">
                         <button type="submit" class="btn btn-danger py-2 fw-bold">
                             <i class="bi bi-check-circle me-2"></i>Update Profile
                         </button>
                     </div>
                 </form>
+
+                <div class="mt-5 border-top pt-4">
+                    <h5 class="text-danger fw-bold mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Danger Zone
+                    </h5>
+                    <div class="p-3 border border-danger border-opacity-25 rounded bg-danger bg-opacity-10">
+                        <p class="small mb-3">Clearing personal info will remove your bio, location, phone number, and profile picture. Your account and donation history will remain intact.</p>
+                        <form action="{% url 'delete_personal_info' %}" method="POST" onsubmit="return confirm('Are you sure you want to clear your personal information? This cannot be undone.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                Clear Personal Information
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

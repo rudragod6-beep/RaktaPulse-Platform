@@ -11,14 +11,26 @@ BLOOD_GROUPS = [
     ('AB+', 'AB+'), ('AB-', 'AB-'),
 ]
 
+class Badge(models.Model):
+    name = models.CharField(max_length=50)
+    description = models.CharField(max_length=255)
+    icon_class = models.CharField(max_length=50, default='fas fa-medal') # FontAwesome class
+
+    def __str__(self):
+        return self.name
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(max_length=500, blank=True)
     location = models.CharField(max_length=100, blank=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    last_location_update = models.DateTimeField(null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     blood_group = models.CharField(max_length=5, choices=BLOOD_GROUPS, blank=True)
     profile_pic = models.ImageField(upload_to='profile_pics', blank=True, null=True)
+    badges = models.ManyToManyField(Badge, blank=True, related_name='users')
 
     def __str__(self):
         return self.user.username
@@ -40,6 +52,8 @@ def sync_donor_profile(sender, instance, **kwargs):
         donor.name = f"{instance.user.first_name} {instance.user.last_name}".strip() or instance.user.username
         donor.blood_group = instance.blood_group
         donor.location = instance.location
+        donor.latitude = instance.latitude
+        donor.longitude = instance.longitude
         donor.phone = instance.phone
         donor.save()
 
@@ -103,6 +117,7 @@ class BloodRequest(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     contact_number = models.CharField(max_length=20)
+    image = models.ImageField(upload_to='blood_requests/', null=True, blank=True)
     required_date = models.DateField(default=timezone.now)
     status = models.CharField(max_length=20, default='Active')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -150,11 +165,35 @@ class Notification(models.Model):
         return f"Notification for {self.user.username}: {self.message[:20]}..."
 
 class Message(models.Model):
+    MESSAGE_TYPES = [
+        ('text', 'Text'),
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('file', 'File'),
+        ('sticker', 'Sticker'),
+    ]
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
-    content = models.TextField()
+    content = models.TextField(blank=True, null=True)
+    attachment = models.FileField(upload_to='chat_attachments/', blank=True, null=True)
+    message_type = models.CharField(max_length=10, choices=MESSAGE_TYPES, default='text')
+    sticker_id = models.CharField(max_length=50, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
     def __str__(self):
         return f"From {self.sender.username} to {self.receiver.username} at {self.timestamp}"
+
+class HealthReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_reports')
+    title = models.CharField(max_length=200)
+    hospital_name = models.CharField(max_length=255, blank=True, null=True)
+    report_file = models.FileField(upload_to='health_reports/')
+    description = models.TextField(blank=True, null=True)
+    report_date = models.DateField(default=timezone.now)
+    next_test_date = models.DateField(blank=True, null=True)
+    allow_notifications = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Report: {self.title} for {self.user.username}"

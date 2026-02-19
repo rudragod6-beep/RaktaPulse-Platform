@@ -128,7 +128,28 @@
         <div class="chat-messages" id="chatMessages">
             {% for msg in chat_messages %}
                 <div class="message {% if msg.sender == user %}message-sent{% else %}message-received{% endif %}">
-                    {{ msg.content }}
+                    {% if msg.message_type == 'text' %}
+                        {{ msg.content }}
+                    {% elif msg.message_type == 'image' %}
+                        <img src="{{ msg.attachment.url }}" class="img-fluid rounded-3 mb-2" style="max-height: 300px; cursor: pointer;" onclick="window.open(this.src)">
+                        {% if msg.content %}<p class="mb-0">{{ msg.content }}</p>{% endif %}
+                    {% elif msg.message_type == 'video' %}
+                        <video src="{{ msg.attachment.url }}" controls class="rounded-3 mb-2 w-100" style="max-height: 300px;"></video>
+                        {% if msg.content %}<p class="mb-0">{{ msg.content }}</p>{% endif %}
+                    {% elif msg.message_type == 'file' %}
+                        <div class="d-flex align-items-center gap-2 p-2 bg-black bg-opacity-10 rounded-3">
+                            <i class="bi bi-file-earmark-arrow-down-fill fs-4"></i>
+                            <div class="overflow-hidden">
+                                <a href="{{ msg.attachment.url }}" target="_blank" class="text-reset text-decoration-none d-block text-truncate small fw-bold">
+                                    {{ msg.attachment.name|cut:"chat_attachments/" }}
+                                </a>
+                                <small class="opacity-75">{{ msg.attachment.size|filesizeformat }}</small>
+                            </div>
+                        </div>
+                        {% if msg.content %}<p class="mt-2 mb-0">{{ msg.content }}</p>{% endif %}
+                    {% elif msg.message_type == 'sticker' %}
+                        <div class="display-4">{{ msg.sticker_id }}</div>
+                    {% endif %}
                     <span class="message-time {% if msg.sender == user %}text-white-50{% else %}text-secondary{% endif %}">
                         {{ msg.timestamp|date:"g:i a" }}
                     </span>
@@ -140,13 +161,83 @@
             {% endfor %}
         </div>
 
-        <form method="post" class="d-flex gap-2">
+        <form method="post" enctype="multipart/form-data" class="d-flex flex-column gap-2" id="messageForm">
             {% csrf_token %}
-            <input type="text" name="content" class="form-control rounded-pill px-4" placeholder="Type your message..." autocomplete="off" required>
-            <button type="submit" class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                <i class="bi bi-send-fill"></i>
-            </button>
+            <div id="attachmentPreview" class="p-2 border rounded-3 bg-light d-none align-items-center gap-2">
+                <div id="previewContent" class="flex-grow-1 small text-truncate"></div>
+                <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="clearAttachment()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            
+            <div class="d-flex gap-2 align-items-center">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    <ul class="dropdown-menu shadow border-0 p-2">
+                        <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="#" onclick="document.getElementById('fileInput').click()">
+                            <i class="bi bi-file-earmark-plus text-primary"></i> Document
+                        </a></li>
+                        <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="#" onclick="openCamera()">
+                            <i class="bi bi-camera text-danger"></i> Camera
+                        </a></li>
+                        <li><a class="dropdown-item rounded-2 d-flex align-items-center gap-2" href="#" onclick="document.getElementById('fileInput').setAttribute('accept', 'image/*,video/*'); document.getElementById('fileInput').click()">
+                            <i class="bi bi-images text-success"></i> Photos & Videos
+                        </a></li>
+                    </ul>
+                </div>
+
+                <button type="button" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-emoji-smile"></i>
+                </button>
+                <div class="dropdown-menu p-3 shadow border-0" style="width: 300px;">
+                    <h6 class="dropdown-header px-0 mb-2">Select Sticker</h6>
+                    <div class="d-grid gap-2 text-center" id="stickerGrid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🩸')">🩸</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('💉')">💉</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('❤️')">❤️</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🩹')">🩹</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🩺')">🩺</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🏥')">🏥</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🚑')">🚑</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🆘')">🆘</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('⭐')">⭐</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🏆')">🏆</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🙌')">🙌</div>
+                        <div class="fs-2 p-2 sticker-item" style="cursor: pointer;" onclick="sendSticker('🙏')">🙏</div>
+                    </div>
+                </div>
+
+                <input type="text" name="content" id="messageInput" class="form-control rounded-pill px-4" placeholder="Type your message..." autocomplete="off">
+                <input type="file" name="attachment" id="fileInput" class="d-none" onchange="handleFileSelect(this)">
+                <input type="hidden" name="sticker_id" id="stickerInput">
+                
+                <button type="submit" class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
         </form>
+    </div>
+</div>
+
+<!-- Camera Modal -->
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-0 overflow-hidden">
+            <div class="modal-body p-0 position-relative">
+                <video id="cameraVideo" autoplay playsinline class="w-100 bg-black"></video>
+                <canvas id="cameraCanvas" class="d-none"></canvas>
+                <div class="position-absolute bottom-0 start-0 end-0 p-4 d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-light rounded-circle p-3 shadow" onclick="capturePhoto()">
+                        <i class="bi bi-camera-fill fs-4"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-light rounded-circle p-3" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -228,11 +319,42 @@
                 { url: 'stun:stun4.l.google.com:19302' },
             ]
         },
-        debug: 1
+        debug: 3
     });
     
     let localStream;
     let currentCall;
+
+    // Helper to get local stream with fallback
+    async function getLocalStream(videoRequested) {
+        const constraints = {
+            audio: true,
+            video: videoRequested ? {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: "user"
+            } : false
+        };
+
+        try {
+            console.log('Attempting to get media with constraints:', constraints);
+            return await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (err) {
+            console.warn('Initial media request failed, trying fallback...', err);
+            
+            if (videoRequested) {
+                // If video failed, try audio only
+                try {
+                    console.log('Falling back to audio only...');
+                    return await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                } catch (audioErr) {
+                    console.error('Audio fallback also failed', audioErr);
+                    throw audioErr;
+                }
+            }
+            throw err;
+        }
+    }
     
     const callModal = new bootstrap.Modal(document.getElementById('callModal'));
     const incomingCallUI = document.getElementById('incomingCallUI');
@@ -264,7 +386,6 @@
     peer.on('call', (call) => {
         console.log('Incoming call from: ' + call.peer);
         if (call.peer === PEER_ID_PREFIX + sanitizeId(OTHER_USERNAME)) {
-            // If already in a call, busy logic could go here
             currentCall = call;
             incomingCallUI.style.display = 'block';
             playRingtone('incoming');
@@ -280,12 +401,14 @@
 
     // Start Call Function
     async function startCall(videoEnabled = true) {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Your browser does not support video/audio calls or is not using a secure connection (HTTPS).');
+            return;
+        }
+
         try {
             callStatus.innerText = "Requesting permissions...";
-            localStream = await navigator.mediaDevices.getUserMedia({
-                video: videoEnabled,
-                audio: true
-            });
+            localStream = await getLocalStream(videoEnabled);
             
             localVideo.srcObject = localStream;
             callModal.show();
@@ -296,7 +419,10 @@
             handleCall(call);
         } catch (err) {
             console.error('Failed to get local stream', err);
-            alert('Could not access camera or microphone.');
+            let msg = 'Could not access camera or microphone. Please check your permissions and hardware.';
+            if (err.name === 'NotAllowedError') msg = 'Permission denied. Please allow camera/microphone access in your browser settings.';
+            if (err.name === 'NotFoundError') msg = 'No camera or microphone found on your device.';
+            alert(msg);
         }
     }
 
@@ -328,10 +454,8 @@
         stopRingtones();
         try {
             callStatus.innerText = "Answering...";
-            localStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
+            // Try to get video if possible, but fallback to audio
+            localStream = await getLocalStream(true);
             localVideo.srcObject = localStream;
             callModal.show();
             currentCall.answer(localStream);
@@ -388,10 +512,86 @@
         }
     });
 
+    // Messaging Enhancements
+    const attachmentPreview = document.getElementById('attachmentPreview');
+    const previewContent = document.getElementById('previewContent');
+    const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    const cameraVideo = document.getElementById('cameraVideo');
+    const cameraCanvas = document.getElementById('cameraCanvas');
+    let cameraStream = null;
+
+    window.handleFileSelect = function(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            previewContent.innerText = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            attachmentPreview.classList.remove('d-none');
+            attachmentPreview.classList.add('d-flex');
+        }
+    }
+
+    window.clearAttachment = function() {
+        document.getElementById('fileInput').value = '';
+        attachmentPreview.classList.remove('d-flex');
+        attachmentPreview.classList.add('d-none');
+    }
+
+    window.openCamera = async function() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Your browser does not support camera access or is not using HTTPS.');
+            return;
+        }
+
+        try {
+            cameraStream = await getLocalStream(true);
+            cameraVideo.srcObject = cameraStream;
+            cameraModal.show();
+        } catch (err) {
+            console.error('Camera error:', err);
+            let msg = 'Could not access camera.';
+            if (err.name === 'NotAllowedError') msg = 'Camera permission denied.';
+            if (err.name === 'NotFoundError') msg = 'No camera found on your device.';
+            alert(msg);
+        }
+    }
+
+    document.getElementById('cameraModal').addEventListener('hidden.bs.modal', () => {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+    });
+
+    window.capturePhoto = function() {
+        const context = cameraCanvas.getContext('2d');
+        cameraCanvas.width = cameraVideo.videoWidth;
+        cameraCanvas.height = cameraVideo.videoHeight;
+        context.drawImage(cameraVideo, 0, 0);
+        
+        cameraCanvas.toBlob((blob) => {
+            const file = new File([blob], "camera_capture.jpg", { type: "image/jpeg" });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            document.getElementById('fileInput').files = dataTransfer.files;
+            
+            previewContent.innerText = "Captured photo ready to send";
+            attachmentPreview.classList.remove('d-none');
+            attachmentPreview.classList.add('d-flex');
+            cameraModal.hide();
+        }, 'image/jpeg');
+    }
+
+    window.sendSticker = function(sticker) {
+        document.getElementById('stickerInput').value = sticker;
+        document.getElementById('messageForm').submit();
+    }
+
     // Handle cleanup on page unload
     window.addEventListener('beforeunload', () => {
         endCall();
         peer.destroy();
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+        }
     });
 </script>
 {% endblock %}

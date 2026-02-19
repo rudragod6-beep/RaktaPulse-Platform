@@ -281,6 +281,7 @@
                 <li class="{% if request.resolver_match.url_name == 'vaccination_info' %}active{% endif %}"><a href="{% url 'vaccination_info' %}"><i class="bi bi-shield-check"></i> {% trans "Vaccination" %}</a></li>
                 {% if user.is_authenticated %}
                 <li class="{% if 'vaccination_dashboard' in request.resolver_match.url_name or 'add_vaccination' in request.resolver_match.url_name %}active{% endif %}"><a href="{% url 'vaccination_dashboard' %}"><i class="bi bi-journal-check"></i> {% trans "My Records" %}</a></li>
+                <li class="{% if 'health_report' in request.resolver_match.url_name %}active{% endif %}"><a href="{% url 'health_report_list' %}"><i class="bi bi-file-medical-fill text-danger"></i> {% trans "Health Reports" %}</a></li>
                 {% endif %}
                 <li><a href="/admin/"><i class="bi bi-gear-fill"></i> {% trans "Settings" %}</a></li>
             </ul>
@@ -511,5 +512,46 @@
     </script>
 
     {% block scripts %}{% endblock %}
+
+    {% if user.is_authenticated %}
+    <script>
+        (function() {
+            function sendLocation(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // Update local display if it exists
+                const locText = document.getElementById('location-text');
+                if (locText && locText.innerText === "Detect Location") {
+                    locText.innerText = lat.toFixed(4) + ", " + lng.toFixed(4);
+                }
+
+                fetch("{% url 'update_location' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({
+                        latitude: lat,
+                        longitude: lng
+                    })
+                }).catch(err => console.debug("Location update deferred"));
+            }
+
+            if ("geolocation" in navigator) {
+                // Live tracking
+                navigator.geolocation.watchPosition(sendLocation, 
+                    (err) => console.debug("Position update skipped"),
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 60000, // 1 minute
+                        timeout: 30000
+                    }
+                );
+            }
+        })();
+    </script>
+    {% endif %}
 </body>
 </html>

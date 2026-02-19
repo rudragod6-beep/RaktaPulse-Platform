@@ -16,7 +16,7 @@
                         <p class="text-secondary">Fill in the details to alert nearby donors.</p>
                     </div>
 
-                    <form method="POST" id="requestForm">
+                    <form method="POST" id="requestForm" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -51,6 +51,11 @@
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-secondary">Contact Number *</label>
                                 <input type="text" name="contact_number" class="form-control rounded-3" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-secondary">Upload Photo (Optional)</label>
+                                <input type="file" name="image" class="form-control rounded-3" accept="image/*">
+                                <div class="form-text small">Include a prescription or patient photo for verification.</div>
                             </div>
                             
                             <!-- Hidden coordinates -->
