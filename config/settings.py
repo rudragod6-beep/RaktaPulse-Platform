@@ -23,11 +23,13 @@ DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() == "true"
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
+    "raktapulse-platform.flatlogic.app",
     os.getenv("HOST_FQDN", ""),
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     origin for origin in [
+        "raktapulse-platform.flatlogic.app",
         os.getenv("HOST_FQDN", ""),
         os.getenv("CSRF_TRUSTED_ORIGIN", "")
     ] if origin

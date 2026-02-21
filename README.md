@@ -1,31 +1,38 @@
-# Flatlogic Python Template Workspace
+# 🩸 RaktaPulse - Community Blood Management System
 
-This workspace houses the Django application scaffold used for Python-based templates.
+Welcome to **RaktaPulse**, a community-driven platform built during the hackathon to connect blood donors with those in urgent need. Our mission is to ensure that no life is lost due to a lack of blood availability by leveraging real-time location data and community alerts.
 
-## Requirements
+## ✨ Features
 
-- Python 3.11+
-- MariaDB (or MySQL-compatible server) with the credentials prepared by `setup_mariadb_project.sh`
-- System packages: `pkg-config`, `libmariadb-dev` (already installed on golden images)
+- **📍 Real-time Donor Matching**: Find donors within a 10km radius using geolocation.
+- **🚨 Emergency Alerts**: Simulated SMS broadcast to nearby donors for critical requests.
+- **💬 P2P Chat**: Integrated messaging for donors and requesters to coordinate.
+- **🛡️ Health Tracking**: Manage vaccination records and digital health reports.
+- **🏆 Gamification**: Earn badges for your contributions to the community.
 
-## Getting Started
+## 🛠️ Technical Stack
 
-```bash
-python3 -m pip install --break-system-packages -r requirements.txt
-python3 manage.py migrate
-python3 manage.py runserver 0.0.0.0:8000
-```
+- **Backend**: Python 3.11, Django 5.x
+- **Database**: MariaDB/MySQL
+- **Frontend**: Bootstrap 5, FontAwesome, Leaflet.js (Maps)
+- **Deployment**: Apache, Cloudflare Tunnel
 
-Environment variables are loaded from `../.env` (the executor root). See `.env.example` if you need to populate values manually.
+## 🚀 Getting Started
 
-## Project Structure
+1. **Install Dependencies**:
+   ```bash
+   python3 -m pip install -r requirements.txt
+   ```
 
-- `config/` – Django project settings, URLs, WSGI entrypoint.
-- `core/` – Default app with a basic health-check route.
-- `manage.py` – Django management entrypoint.
+2. **Database Setup**:
+   ```bash
+   python3 manage.py migrate
+   ```
 
-## Next Steps
+3. **Run the Server**:
+   ```bash
+   python3 manage.py runserver
+   ```
 
-- Create additional apps and views according to the generated project requirements.
-- Configure serving via Apache + mod_wsgi or gunicorn (instructions to be added).
-- Run `python3 manage.py collectstatic` before serving through Apache.
+---
+*Developed with ❤️ for the Hackathon 2026. Let's save lives, one drop at a time.*

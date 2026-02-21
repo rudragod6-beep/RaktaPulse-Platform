@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+# --- Constants & Choices ---
+
 BLOOD_GROUPS = [
     ('A+', 'A+'), ('A-', 'A-'),
     ('B+', 'B+'), ('B-', 'B-'),
@@ -11,10 +13,12 @@ BLOOD_GROUPS = [
     ('AB+', 'AB+'), ('AB-', 'AB-'),
 ]
 
+# --- Models ---
+
 class Badge(models.Model):
     name = models.CharField(max_length=50)
     description = models.CharField(max_length=255)
-    icon_class = models.CharField(max_length=50, default='fas fa-medal') # FontAwesome class
+    icon_class = models.CharField(max_length=50, default='fas fa-medal') # FontAwesome
 
     def __str__(self):
         return self.name
@@ -33,29 +37,38 @@ class UserProfile(models.Model):
     badges = models.ManyToManyField(Badge, blank=True, related_name='users')
 
     def __str__(self):
-        return self.user.username
+        return f"{self.user.username}'s Profile"
+
+# --- Signals for Data Consistency ---
 
 @receiver(post_save, sender=User)
 def create_or_save_user_profile(sender, instance, created, **kwargs):
+    """Auto-creates a profile when a new User is registered."""
     if created:
         UserProfile.objects.get_or_create(user=instance)
     else:
-        # For existing users, ensure profile exists
+        # Fallback for users created without signals (e.g. management commands)
         if not hasattr(instance, 'profile'):
             UserProfile.objects.create(user=instance)
         instance.profile.save()
 
 @receiver(post_save, sender=UserProfile)
 def sync_donor_profile(sender, instance, **kwargs):
+    """Keeps the Donor record in sync with the UserProfile."""
     if instance.blood_group:
-        donor, created = Donor.objects.get_or_create(user=instance.user)
-        donor.name = f"{instance.user.first_name} {instance.user.last_name}".strip() or instance.user.username
+        donor, _ = Donor.objects.get_or_create(user=instance.user)
+        # Use first/last name if available, otherwise fallback to username
+        full_name = f"{instance.user.first_name} {instance.user.last_name}".strip()
+        donor.name = full_name or instance.user.username
+        
         donor.blood_group = instance.blood_group
         donor.location = instance.location
         donor.latitude = instance.latitude
         donor.longitude = instance.longitude
         donor.phone = instance.phone
         donor.save()
+
+# --- Health & Medical Records ---
 
 class VaccineRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vaccine_records')
@@ -69,7 +82,9 @@ class VaccineRecord(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.vaccine_name} - Dose {self.dose_number} for {self.user.username}"
+        return f"{self.vaccine_name} (Dose {self.dose_number}) - {self.user.username}"
+
+# --- Core Blood Donation Models ---
 
 class Donor(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='donor_profile')
@@ -90,7 +105,8 @@ class Donor(models.Model):
     avatar_url = models.URLField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.name} ({self.blood_group}) - {'Verified' if self.is_verified else 'Unverified'}"
+        status = "Verified" if self.is_verified else "Pending"
+        return f"{self.name} [{self.blood_group}] - {status}"
 
 class Hospital(models.Model):
     name = models.CharField(max_length=255)
