@@ -55,6 +55,47 @@
                     </div>
                 </div>
 
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">Impact & Reliability</h5>
+                    <div class="row g-3 text-center">
+                        <div class="col-6">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <div class="h2 fw-bold text-danger mb-0">{{ donations_made.count }}</div>
+                                <div class="small text-muted text-uppercase fw-bold">Volunteered</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <div class="h2 fw-bold text-success mb-0">{{ completed_donations_count }}</div>
+                                <div class="small text-muted text-uppercase fw-bold">Successful</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if donations_made %}
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">Recent Donations</h5>
+                    <div class="list-group list-group-flush border rounded-3 overflow-hidden">
+                        {% for donation in donations_made|slice:":5" %}
+                        <div class="list-group-item bg-light-subtle">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">Donated to {{ donation.request.patient_name }}</div>
+                                    <div class="small text-muted">{{ donation.request.hospital }} | {{ donation.date|date:"M d, Y" }}</div>
+                                </div>
+                                {% if donation.is_completed %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Pending</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <div class="d-grid gap-2">
                     {% if user.is_authenticated and user != profile_user %}
                         <a href="{% url 'chat' profile_user.username %}" class="btn btn-danger py-2">

@@ -80,6 +80,94 @@
                     </div>
                 </form>
 
+                <h5 class="fw-bold mb-3 border-bottom pb-2">
+                    <i class="bi bi-clock-history me-2 text-danger"></i>Transaction & Operation History
+                </h5>
+                
+                <div class="mb-5">
+                    <h6 class="fw-bold text-muted small mb-3">Donor Record (People You've Helped)</h6>
+                    <div class="stats-mini bg-light p-3 rounded mb-3">
+                        <div class="row text-center">
+                            <div class="col-6 border-end">
+                                <div class="h4 mb-0 fw-bold text-danger">{{ donations_made.count }}</div>
+                                <div class="small text-muted">Total Volunteers</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="h4 mb-0 fw-bold text-success">{{ completed_donations_count }}</div>
+                                <div class="small text-muted">Successful Donations</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if donations_made %}
+                        <div class="list-group list-group-flush border rounded overflow-hidden">
+                            {% for donation in donations_made %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="fw-bold">Helped {{ donation.request.patient_name }}</span>
+                                            <div class="small text-muted">{{ donation.request.hospital }} | {{ donation.date|date:"M d, Y" }}</div>
+                                        </div>
+                                        <div>
+                                            {% if donation.is_completed %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center p-4 bg-light rounded border border-dashed">
+                            <p class="text-muted small mb-0">You haven't volunteered for any requests yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-5">
+                    <h6 class="fw-bold text-muted small mb-3">Request History (Who Helped You)</h6>
+                    {% if requests_made %}
+                        <div class="list-group list-group-flush border rounded overflow-hidden">
+                            {% for br in requests_made %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="fw-bold">{{ br.blood_group }} for {{ br.patient_name }}</span>
+                                            <div class="small text-muted">{{ br.created_at|date:"M d, Y" }} | Status: <strong>{{ br.status }}</strong></div>
+                                            
+                                            <div class="mt-2">
+                                                <p class="small fw-bold mb-1">Volunteers:</p>
+                                                {% with br.donations.all as donations %}
+                                                    {% if donations %}
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            {% for d in donations %}
+                                                                <a href="{% url 'public_profile' d.donor_user.username %}" class="btn btn-sm btn-outline-danger py-0 px-2 rounded-pill small">
+                                                                    <i class="bi bi-person-heart me-1"></i>{{ d.donor_user.username }}
+                                                                </a>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted small italic">No volunteers yet</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        </div>
+                                        <span class="badge {% if br.status == 'Active' %}bg-danger{% elif br.status == 'Accepted' %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ br.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center p-4 bg-light rounded border border-dashed">
+                            <p class="text-muted small mb-0">You haven't made any blood requests yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
                 <div class="mt-5 border-top pt-4">
                     <h5 class="text-danger fw-bold mb-3">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>Danger Zone

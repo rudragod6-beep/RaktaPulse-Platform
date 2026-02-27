@@ -140,9 +140,16 @@ def profile(request):
         u_form = UserUpdateForm(instance=request.user)
         p_form = ProfileUpdateForm(instance=profile)
 
+    # Fetch History
+    requests_made = BloodRequest.objects.filter(user=request.user).order_by('-created_at')
+    donations_made = DonationEvent.objects.filter(donor_user=request.user).select_related('request').order_by('-date')
+    
     context = {
         'u_form': u_form,
-        'p_form': p_form
+        'p_form': p_form,
+        'requests_made': requests_made,
+        'donations_made': donations_made,
+        'completed_donations_count': donations_made.filter(is_completed=True).count()
     }
 
     return render(request, 'core/profile.html', context)
@@ -263,7 +270,12 @@ def home(request):
     else:
         donor_list_data.sort(key=lambda x: (-x.is_available, x.name))
 
-    blood_requests = BloodRequest.objects.filter(status='Active').order_by('-urgency', '-created_at')
+    three_days_ago = timezone.now() - timezone.timedelta(days=3)
+    blood_requests = BloodRequest.objects.filter(
+        Q(status='Active') | 
+        Q(status='Accepted', accepted_at__gte=three_days_ago)
+    ).order_by('-urgency', '-created_at')
+    
     blood_banks = BloodBank.objects.all()
 
     # Stats for Dashboard
@@ -275,7 +287,9 @@ def home(request):
 
     stats = {
         "total_donors": Donor.objects.count() + demo_donors,
-        "active_requests": BloodRequest.objects.filter(status='Active').count(),
+        "active_requests": BloodRequest.objects.filter(
+            Q(status='Active') | Q(status='Accepted', accepted_at__gte=three_days_ago)
+        ).count(),
         "total_stock": sum([
             bb.stock_a_plus + bb.stock_a_minus + bb.stock_b_plus + bb.stock_b_minus +
             bb.stock_o_plus + bb.stock_o_minus + bb.stock_ab_plus + bb.stock_ab_minus
@@ -412,7 +426,11 @@ def vaccination_info(request):
 
 def live_map(request):
     """View to display live alerts/requests on a map."""
-    active_requests = BloodRequest.objects.filter(status='Active').order_by('-created_at')
+    three_days_ago = timezone.now() - timezone.timedelta(days=3)
+    active_requests = BloodRequest.objects.filter(
+        Q(status='Active') | 
+        Q(status='Accepted', accepted_at__gte=three_days_ago)
+    ).order_by('-created_at')
     
     # Also include blood banks and donors optionally if we want a full map
     # But focusing on alerts as requested.
@@ -524,6 +542,11 @@ def volunteer_for_request(request, request_id):
             request=blood_request,
             donor_user=request.user
         )
+        # Update request status and timestamp
+        blood_request.status = 'Accepted'
+        blood_request.accepted_at = timezone.now()
+        blood_request.save()
+        
         messages.success(request, "Thank you for volunteering! The requester has been notified.")
         
         # Notify the requester
@@ -618,10 +641,16 @@ def public_profile(request, username):
     profile = user.profile
     donor_profile = getattr(user, 'donor_profile', None)
     
+    # Fetch History
+    donations_made = DonationEvent.objects.filter(donor_user=user).select_related('request').order_by('-date')
+    completed_donations_count = donations_made.filter(is_completed=True).count()
+    
     context = {
         'profile_user': user,
         'profile': profile,
         'donor': donor_profile,
+        'donations_made': donations_made,
+        'completed_donations_count': completed_donations_count
     }
     return render(request, 'core/public_profile.html', context)
 

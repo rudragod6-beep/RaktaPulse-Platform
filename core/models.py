@@ -137,6 +137,7 @@ class BloodRequest(models.Model):
     image = models.ImageField(upload_to='blood_requests/', null=True, blank=True)
     required_date = models.DateField(default=timezone.now)
     status = models.CharField(max_length=20, default='Active')
+    accepted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
