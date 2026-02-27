@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-5 text-center">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="display-4 fw-bold text-danger mb-3">{{ title }}</h1>
+            <p class="lead text-muted">Every single donation has the potential to save up to three lives. Together, we are building a safer community.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-danger text-white">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-heartbeat fa-4x opacity-75"></i>
+                    </div>
+                    <h3 class="display-3 fw-bold mb-0">{{ total_impact }}</h3>
+                    <p class="text-uppercase fw-bold opacity-75">Total Lives Saved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-tint fa-4x text-danger opacity-75"></i>
+                    </div>
+                    <h3 class="display-3 fw-bold mb-0 text-dark">{{ total_donations }}</h3>
+                    <p class="text-uppercase fw-bold text-muted">Successful Donations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-5">
+        <div class="card-header bg-white py-4 border-bottom border-light text-center">
+            <h4 class="mb-0 fw-bold">Recent Life-Saving Events</h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4 border-0 py-3">Hero</th>
+                            <th class="border-0 py-3">Impact</th>
+                            <th class="border-0 py-3">Location</th>
+                            <th class="pe-4 border-0 py-3 text-end">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donation in donations %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ donation.donor_user.username }}</div>
+                                <div class="text-muted small">Verified Donor</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-success rounded-pill px-3">
+                                    <i class="fas fa-plus me-1"></i> 3 Lives Saved
+                                </span>
+                            </td>
+                            <td>
+                                <div class="text-muted">{{ donation.request.location }}</div>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <div class="fw-medium">{{ donation.date|date:"M d, Y" }}</div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <p class="text-muted mb-0">No recent events to display.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <a href="{% url 'donation_history' %}" class="btn btn-danger rounded-pill px-5 py-3 shadow-sm">
+            <i class="fas fa-history me-2"></i> View Full Donation History
+        </a>
+    </div>
+</div>
+{% endblock %}

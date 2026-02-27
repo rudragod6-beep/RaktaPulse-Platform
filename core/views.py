@@ -285,6 +285,13 @@ def home(request):
     actual_completed = DonationEvent.objects.filter(is_completed=True).count()
     completed_donations = actual_completed + demo_donations
 
+    # Find Recent Heroes (Last 24 Hours)
+    last_24_hours = timezone.now() - timezone.timedelta(hours=24)
+    recent_heroes = DonationEvent.objects.filter(
+        is_completed=True, 
+        date__gte=last_24_hours
+    ).select_related('donor').order_by('-date')
+
     stats = {
         "total_donors": Donor.objects.count() + demo_donors,
         "active_requests": BloodRequest.objects.filter(
@@ -315,11 +322,12 @@ def home(request):
     ]
 
     context = {
-        "donors": donor_list_data[:8],
+        "donors": donor_list_data[:15], # Increased count for scrollability
         "blood_requests": blood_requests[:6],
         "blood_banks": blood_banks,
         "blood_groups": [g[0] for g in BLOOD_GROUPS],
         "stats": stats,
+        "recent_heroes": recent_heroes,
         "project_name": "RaktaPulse",
         "current_time": timezone.now(),
         "myths_vs_facts": myths_vs_facts,
@@ -333,6 +341,8 @@ def home(request):
         )
         context["involved_events"] = involved_events
         context["user_badges"] = request.user.profile.badges.all()
+        context["unread_notifications_count"] = request.user.notifications.filter(is_read=False).count()
+        context["unread_messages_count"] = Message.objects.filter(receiver=request.user, is_read=False).count()
 
     return render(request, "core/index.html", context)
 
@@ -478,16 +488,71 @@ def request_blood(request):
     }
     return render(request, 'core/request_blood.html', context)
 
+import csv
+from django.http import HttpResponse
+
 @login_required
 def donation_history(request):
-    """View to display the full history of completed donations."""
+    """View to display the full history of completed donations with filtering and export."""
     completed_donations = DonationEvent.objects.filter(is_completed=True).select_related('donor_user', 'request').order_by('-date')
+    
+    # Filtering
+    blood_group = request.GET.get('blood_group')
+    location = request.GET.get('location')
+    export = request.GET.get('export')
+    
+    if blood_group:
+        completed_donations = completed_donations.filter(request__blood_group=blood_group)
+    if location:
+        completed_donations = completed_donations.filter(request__location__icontains=location)
+        
+    # Export to CSV
+    if export == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="donation_history.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Donor', 'Blood Group', 'Patient', 'Location', 'Hospital', 'Date'])
+        
+        for donation in completed_donations:
+            writer.writerow([
+                donation.donor_user.username if donation.donor_user else donation.donor.name,
+                donation.request.blood_group,
+                donation.request.patient_name,
+                donation.request.location,
+                donation.request.hospital,
+                donation.date.strftime('%Y-%m-%d %H:%M')
+            ])
+        return response
     
     context = {
         'donations': completed_donations,
-        'title': 'Donation History & Lives Saved'
+        'title': 'Donation History',
+        'blood_groups': [g[0] for g in BLOOD_GROUPS],
+        'current_filters': {
+            'blood_group': blood_group,
+            'location': location
+        }
     }
     return render(request, 'core/donation_history.html', context)
+
+@login_required
+def lives_saved(request):
+    """View to display the impact and lives saved through donations."""
+    completed_donations = DonationEvent.objects.filter(is_completed=True).select_related('donor_user', 'request').order_by('-date')
+    
+    total_donations = completed_donations.count()
+    # Demo data from home view to keep consistency
+    demo_donations = 157
+    total_impact = (total_donations + demo_donations) * 3
+    
+    context = {
+        'donations': completed_donations[:10], # Show recent impact
+        'total_donations': total_donations + demo_donations,
+        'total_impact': total_impact,
+        'title': 'Lives Saved & Community Impact',
+    }
+    return render(request, 'core/lives_saved.html', context)
 
 @login_required
 @login_required

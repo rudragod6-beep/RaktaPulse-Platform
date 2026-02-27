@@ -25,6 +25,10 @@ urlpatterns = [
     path("", include("core.urls")),
 ]
 
+admin.site.site_header = "Blood Bank Management System"
+admin.site.site_title = "Admin Portal"
+admin.site.index_title = "Welcome to Blood Bank Management Portal"
+
 if settings.DEBUG:
     urlpatterns += static("/assets/", document_root=settings.BASE_DIR / "assets")
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

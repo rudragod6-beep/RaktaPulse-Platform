@@ -94,6 +94,67 @@
         color: white !important;
     }
 
+    .donor-list-container {
+        max-height: 550px;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+    .donor-list-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    .donor-list-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .donor-list-container::-webkit-scrollbar-thumb {
+        background: var(--pulse-red);
+        border-radius: 10px;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, #1a1a1a, #2d1b1b);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 16px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    .hero-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 8px 12px;
+        margin-right: 10px;
+        border: 1px solid rgba(255, 215, 0, 0.1);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 180px;
+    }
+    .live-pulse {
+        width: 8px;
+        height: 8px;
+        background: #FF4D4D;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+        box-shadow: 0 0 0 rgba(255, 77, 77, 0.4);
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+    }
+    .heroes-scroll {
+        display: flex;
+        overflow-x: auto;
+        padding: 5px 0;
+        scrollbar-width: none;
+    }
+    .heroes-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
     .filter-btn {
         background: #ffffff;
         border: 1px solid var(--border-color);
@@ -207,7 +268,7 @@
             </a>
         </div>
         <div class="col-xl-3 col-md-6 col-6">
-            <a href="{% url 'donation_history' %}" class="stat-card bg-danger bg-opacity-10 border-danger">
+            <a href="{% url 'lives_saved' %}" class="stat-card bg-danger bg-opacity-10 border-danger">
                 <div class="icon-box bg-danger text-white">
                     <i class="bi bi-heart-fill"></i>
                 </div>
@@ -216,13 +277,13 @@
             </a>
         </div>
         <div class="col-xl-3 col-md-6 col-12">
-            <div class="stat-card">
+            <a href="#blood-bank-inventory" class="stat-card text-decoration-none">
                 <div class="icon-box bg-primary bg-opacity-10 text-primary">
                     <i class="bi bi-droplet"></i>
                 </div>
-                <div class="stat-value">{{ stats.total_stock }} <small class="fs-6 fw-normal">/ {{ stats.total_capacity }}</small></div>
-                <div class="stat-label">{% trans "Stock Level" %}</div>
-            </div>
+                <div class="stat-value text-dark">{{ stats.total_stock }} <small class="fs-6 fw-normal text-muted">/ {{ stats.total_capacity }}</small></div>
+                <div class="stat-label text-secondary">{% trans "Stock Level" %}</div>
+            </a>
         </div>
     </div>
 
@@ -231,13 +292,42 @@
         <div class="col-lg-8">
             <div class="glass-card mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="mb-0 brand-font">Available Donors</h4>
+                    <h4 class="mb-0 brand-font">Hero Community</h4>
                     <div class="d-flex gap-2">
                         <button class="filter-btn active" id="btn-list">List View</button>
                         <button class="filter-btn" id="btn-map">Map View</button>
                         <button class="filter-btn" id="btn-nearest">Nearest First</button>
                     </div>
                 </div>
+
+                {% if recent_heroes %}
+                <div class="hero-section">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white small fw-bold">
+                            <span class="live-pulse"></span>
+                            Live: Today's Heroes (Last 24h)
+                        </span>
+                        <span class="badge bg-warning text-dark extra-small">{{ recent_heroes.count }} Active</span>
+                    </div>
+                    <div class="heroes-scroll">
+                        {% for hero in recent_heroes %}
+                        <div class="hero-item">
+                            {% if hero.donor.user and hero.donor.user.profile.profile_pic %}
+                                <img src="{{ hero.donor.user.profile.profile_pic.url }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 0.7rem;">
+                                    {{ hero.donor.blood_group }}
+                                </div>
+                            {% endif %}
+                            <div class="overflow-hidden">
+                                <p class="text-white mb-0 small fw-bold text-truncate" style="max-width: 100px;">{{ hero.donor.name }}</p>
+                                <p class="text-warning extra-small mb-0" style="font-size: 0.65rem;">Saved Life {{ hero.date|timesince }} ago</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
 
                 <div id="map-container" style="display: none; height: 400px; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid var(--border-color);">
                     <div id="map" style="height: 100%;"></div>
@@ -263,59 +353,61 @@
                     <input type="hidden" name="lng" id="lngInputHome" value="{{ request.GET.lng }}">
                 </form>
 
-                <div class="donor-list">
-                    {% for donor in donors %}
-                    <div class="donor-row d-flex align-items-center justify-content-between flex-wrap gap-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="position-relative">
-                                {% if donor.user and donor.user.profile.profile_pic %}
-                                    <img src="{{ donor.user.profile.profile_pic.url }}" alt="{{ donor.name }}" class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover;">
-                                    <span class="position-absolute bottom-0 end-0 badge rounded-pill bg-danger border border-white" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;">
-                                        {{ donor.blood_group }}
-                                    </span>
-                                {% else %}
-                                    <div class="blood-group-pill">{{ donor.blood_group }}</div>
-                                {% endif %}
+                <div class="donor-list-container">
+                    <div class="donor-list">
+                        {% for donor in donors %}
+                        <div class="donor-row d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="position-relative">
+                                    {% if donor.user and donor.user.profile.profile_pic %}
+                                        <img src="{{ donor.user.profile.profile_pic.url }}" alt="{{ donor.name }}" class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover;">
+                                        <span class="position-absolute bottom-0 end-0 badge rounded-pill bg-danger border border-white" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;">
+                                            {{ donor.blood_group }}
+                                        </span>
+                                    {% else %}
+                                        <div class="blood-group-pill">{{ donor.blood_group }}</div>
+                                    {% endif %}
+                                </div>
+                                <div>
+    
+                                    <h6 class="mb-0 fw-bold text-dark">
+                                        {{ donor.name }}
+                                        {% if donor.is_verified %}
+                                        <span class="ms-1" title="Verified Donor"><i class="bi bi-patch-check-fill text-success"></i></span>
+                                        {% endif %}
+                                        {% if donor.distance and donor.distance < 1000 %}
+                                        <span class="ms-2 badge bg-info bg-opacity-10 text-info" style="font-size: 0.65rem;">
+                                            {{ donor.distance|floatformat:1 }} km
+                                        </span>
+                                        {% endif %}
+                                    </h6>
+                                    <p class="mb-0 text-secondary small"><i class="bi bi-geo-alt me-1"></i> {{ donor.location }}, {{ donor.district }}</p>
+                                </div>
                             </div>
-                            <div>
-
-                                <h6 class="mb-0 fw-bold text-dark">
-                                    {{ donor.name }}
-                                    {% if donor.is_verified %}
-                                    <span class="ms-1" title="Verified Donor"><i class="bi bi-patch-check-fill text-success"></i></span>
-                                    {% endif %}
-                                    {% if donor.distance and donor.distance < 1000 %}
-                                    <span class="ms-2 badge bg-info bg-opacity-10 text-info" style="font-size: 0.65rem;">
-                                        {{ donor.distance|floatformat:1 }} km
+                            <div class="d-flex align-items-center gap-4">
+                                <div class="text-end d-none d-sm-block">
+                                    <span class="badge {% if donor.is_available %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10 text-{% if donor.is_available %}success{% else %}secondary{% endif %} mb-1">
+                                        {% if donor.is_available %}Available{% else %}Unavailable{% endif %}
                                     </span>
+                                    <p class="mb-0 text-muted extra-small" style="font-size: 0.7rem;">Last Donated: {{ donor.last_donation_date|default:"Never" }}</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    {% if donor.user %}
+                                    <a href="{% url 'chat' donor.user.username %}" class="btn btn-outline-danger btn-sm rounded-pill" title="Message">
+                                        <i class="bi bi-chat-dots-fill"></i>
+                                    </a>
                                     {% endif %}
-                                </h6>
-                                <p class="mb-0 text-secondary small"><i class="bi bi-geo-alt me-1"></i> {{ donor.location }}, {{ donor.district }}</p>
+                                    <a href="tel:{{ donor.phone }}" class="btn btn-danger btn-sm px-3 rounded-pill">Call</a>
+                                </div>
                             </div>
                         </div>
-                        <div class="d-flex align-items-center gap-4">
-                            <div class="text-end d-none d-sm-block">
-                                <span class="badge {% if donor.is_available %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10 text-{% if donor.is_available %}success{% else %}secondary{% endif %} mb-1">
-                                    {% if donor.is_available %}Available{% else %}Unavailable{% endif %}
-                                </span>
-                                <p class="mb-0 text-muted extra-small" style="font-size: 0.7rem;">Last Donated: {{ donor.last_donation_date|default:"Never" }}</p>
-                            </div>
-                            <div class="d-flex gap-2">
-                                {% if donor.user %}
-                                <a href="{% url 'chat' donor.user.username %}" class="btn btn-outline-danger btn-sm rounded-pill" title="Message">
-                                    <i class="bi bi-chat-dots-fill"></i>
-                                </a>
-                                {% endif %}
-                                <a href="tel:{{ donor.phone }}" class="btn btn-danger btn-sm px-3 rounded-pill">Call</a>
-                            </div>
+                        {% empty %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-search fs-1 text-secondary opacity-25"></i>
+                            <p class="text-secondary mt-3">No donors match your search criteria.</p>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% empty %}
-                    <div class="text-center py-5">
-                        <i class="bi bi-search fs-1 text-secondary opacity-25"></i>
-                        <p class="text-secondary mt-3">No donors match your search criteria.</p>
-                    </div>
-                    {% endfor %}
                 </div>
             </div>
 
@@ -370,9 +462,11 @@
                 </h5>
                 
                 <!-- Emergency SMS Concept Button -->
+                {% if user.is_staff %}
                 <button onclick="sendEmergencyAlert()" class="btn btn-danger w-100 mb-4 py-2 rounded-pill shadow-sm">
                     <i class="bi bi-broadcast me-2"></i>{% trans "Send Emergency SMS Alert" %}
                 </button>
+                {% endif %}
 
                 <div class="request-feed">
                     {% for req in blood_requests %}
@@ -413,7 +507,7 @@
             </div>
 
             <!-- Blood Bank Inventory -->
-            <div class="glass-card">
+            <div class="glass-card" id="blood-bank-inventory">
                 <h5 class="brand-font mb-4">Blood Bank Inventory</h5>
                 <div class="inventory-list">
                     {% for bank in blood_banks %}
@@ -423,17 +517,23 @@
                             <span class="small text-secondary">24/7 Available</span>
                         </div>
                         <div class="d-flex gap-1 flex-wrap">
-                            <span class="badge bg-dark border border-secondary text-secondary extra-small" style="font-size: 0.65rem;">A+ : {{ bank.stock_a_plus }}</span>
-                            <span class="badge bg-dark border border-secondary text-secondary extra-small" style="font-size: 0.65rem;">B+ : {{ bank.stock_b_plus }}</span>
-                            <span class="badge bg-dark border border-secondary text-secondary extra-small" style="font-size: 0.65rem;">O+ : {{ bank.stock_o_plus }}</span>
-                            <span class="badge bg-dark border border-secondary text-secondary extra-small" style="font-size: 0.65rem;">AB+ : {{ bank.stock_ab_plus }}</span>
+                            <span class="badge bg-dark border {% if bank.stock_a_plus < 5 %}border-danger text-danger{% else %}border-secondary text-secondary{% endif %} extra-small" style="font-size: 0.65rem;">A+: {{ bank.stock_a_plus }}</span>
+                            <span class="badge bg-dark border {% if bank.stock_a_minus < 5 %}border-danger text-danger{% else %}border-secondary text-secondary{% endif %} extra-small" style="font-size: 0.65rem;">A-: {{ bank.stock_a_minus }}</span>
+                            <span class="badge bg-dark border {% if bank.stock_b_plus < 5 %}border-danger text-danger{% else %}border-secondary text-secondary{% endif %} extra-small" style="font-size: 0.65rem;">B+: {{ bank.stock_b_plus }}</span>
+                            <span class="badge bg-dark border {% if bank.stock_b_minus < 5 %}border-danger text-danger{% else %}border-secondary text-secondary{% endif %} extra-small" style="font-size: 0.65rem;">B-: {{ bank.stock_b_minus }}</span>
+                            <span class="badge bg-dark border {% if bank.stock_o_plus < 5 %}border-danger text-danger{% else %}border-secondary text-secondary{% endif %} extra-small" style="font-size: 0.65rem;">O+: {{ bank.stock_o_plus }}</span>
+                            <span class="badge bg-dark border {% if bank.stock_o_minus < 5 %}border-danger text-danger{% else %}border-secondary text-secondary{% endif %} extra-small" style="font-size: 0.65rem;">O-: {{ bank.stock_o_minus }}</span>
+                            <span class="badge bg-dark border {% if bank.stock_ab_plus < 5 %}border-danger text-danger{% else %}border-secondary text-secondary{% endif %} extra-small" style="font-size: 0.65rem;">AB+: {{ bank.stock_ab_plus }}</span>
+                            <span class="badge bg-dark border {% if bank.stock_ab_minus < 5 %}border-danger text-danger{% else %}border-secondary text-secondary{% endif %} extra-small" style="font-size: 0.65rem;">AB-: {{ bank.stock_ab_minus }}</span>
                         </div>
                     </div>
                     {% empty %}
                     <p class="text-secondary text-center">No blood banks registered.</p>
                     {% endfor %}
                 </div>
+                {% if user.is_staff %}
                 <a href="/admin/core/bloodbank/" class="btn btn-outline-secondary w-100 btn-sm mt-3">Manage Banks</a>
+                {% endif %}
             </div>
 
             <!-- Extra Feature: Community Tip -->

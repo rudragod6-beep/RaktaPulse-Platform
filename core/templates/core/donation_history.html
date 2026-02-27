@@ -1,4 +1,4 @@
-{% extends 'core/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block content %}
@@ -6,13 +6,47 @@
     <div class="row mb-4">
         <div class="col-md-8">
             <h2 class="display-5 fw-bold text-dark mb-2">{{ title }}</h2>
-            <p class="text-muted">A transparent record of every life saved through the community's generosity.</p>
+            <p class="text-muted">Explore the complete log of blood donations within the RaktaPulse community.</p>
         </div>
         <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
-            <div class="stats-badge p-3 bg-white rounded shadow-sm border-start border-4 border-danger">
+            <div class="stats-badge p-3 bg-white rounded shadow-sm border-start border-4 border-danger me-3">
                 <span class="d-block text-muted small text-uppercase fw-bold">Total Impact</span>
                 <span class="h4 fw-bold mb-0 text-danger">{{ donations.count }} Donations</span>
             </div>
+            <a href="?export=csv{% if current_filters.blood_group %}&blood_group={{ current_filters.blood_group }}{% endif %}{% if current_filters.location %}&location={{ current_filters.location }}{% endif %}" class="btn btn-success rounded-pill shadow-sm">
+                <i class="fas fa-file-csv me-2"></i> Export
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">Blood Group</label>
+                    <select name="blood_group" class="form-select rounded-pill border-light">
+                        <option value="">All Groups</option>
+                        {% for group in blood_groups %}
+                        <option value="{{ group }}" {% if current_filters.blood_group == group %}selected{% endif %}>{{ group }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-muted">Location</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-light border-end-0 rounded-start-pill">
+                            <i class="fas fa-map-marker-alt text-muted"></i>
+                        </span>
+                        <input type="text" name="location" class="form-control border-light border-start-0 rounded-end-pill" placeholder="Search by city or area..." value="{{ current_filters.location|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-danger w-100 rounded-pill">
+                        <i class="fas fa-filter me-2"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

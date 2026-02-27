@@ -40,4 +40,5 @@ urlpatterns = [
     path("update-location/", views.update_location, name="update_location"),
     path("emergency-sms/", views.emergency_sms, name="emergency_sms"),
     path("donation-history/", views.donation_history, name="donation_history"),
+    path("lives-saved/", views.lives_saved, name="lives_saved"),
 ]
