@@ -106,6 +106,28 @@
         background: var(--pulse-red);
         border-color: var(--pulse-red);
     }
+
+    /* Scrollable Request Feed */
+    .request-feed {
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 10px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(230, 57, 70, 0.3) transparent;
+    }
+    .request-feed::-webkit-scrollbar {
+        width: 5px;
+    }
+    .request-feed::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .request-feed::-webkit-scrollbar-thumb {
+        background: rgba(230, 57, 70, 0.2);
+        border-radius: 10px;
+    }
+    .request-feed::-webkit-scrollbar-thumb:hover {
+        background: var(--pulse-red);
+    }
 </style>
 {% endblock %}
 
@@ -176,22 +198,22 @@
             </a>
         </div>
         <div class="col-xl-2 col-md-4 col-6">
-            <div class="stat-card">
+            <a href="{% url 'donation_history' %}" class="stat-card">
                 <div class="icon-box bg-success bg-opacity-10 text-success">
                     <i class="bi bi-check2-circle"></i>
                 </div>
                 <div class="stat-value">{{ stats.completed_donations }}</div>
                 <div class="stat-label">{% trans "Donations" %}</div>
-            </div>
+            </a>
         </div>
         <div class="col-xl-3 col-md-6 col-6">
-            <div class="stat-card bg-danger bg-opacity-10 border-danger">
+            <a href="{% url 'donation_history' %}" class="stat-card bg-danger bg-opacity-10 border-danger">
                 <div class="icon-box bg-danger text-white">
                     <i class="bi bi-heart-fill"></i>
                 </div>
                 <div class="stat-value text-danger">{{ stats.lives_saved }}</div>
                 <div class="stat-label text-danger">{% trans "Lives Saved" %}</div>
-            </div>
+            </a>
         </div>
         <div class="col-xl-3 col-md-6 col-12">
             <div class="stat-card">
@@ -298,7 +320,7 @@
             </div>
 
             <!-- Vaccination Monitoring Section -->
-            <div class="vaccination-card">
+            <div class="vaccination-card mb-4">
                 <div class="row align-items-center">
                     <div class="col-md-7">
                         <h4 class="brand-font text-white mb-2">Vaccination & Eligibility</h4>
@@ -317,6 +339,23 @@
                     <div class="col-md-5 d-none d-md-block text-center">
                         <i class="bi bi-shield-plus text-success" style="font-size: 5rem; opacity: 0.2;"></i>
                     </div>
+                </div>
+            </div>
+
+            <!-- Myths vs Facts Section -->
+            <div class="glass-card bg-light bg-opacity-10 border-danger mb-4">
+                <h4 class="brand-font mb-4 text-center"><i class="bi bi-question-diamond text-danger me-2"></i>{% trans "Top 5 Myths vs. Facts about Blood Donation" %}</h4>
+                <div class="row g-3">
+                    {% for item in myths_vs_facts %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="myth-fact-card p-3 h-100 bg-white rounded-4 shadow-sm border-bottom border-danger border-3">
+                            <div class="text-danger small fw-bold mb-2">{% trans "MYTH" %}</div>
+                            <p class="small text-muted mb-3 italic">"{{ item.myth }}"</p>
+                            <div class="text-success small fw-bold mb-1">{% trans "FACT" %}</div>
+                            <p class="extra-small text-dark mb-0">{{ item.fact }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -401,27 +440,6 @@
             <div class="glass-card mt-4 bg-gradient" style="background: linear-gradient(135deg, #1e1e1e 0%, #2d1b1b 100%);">
                 <h6 class="text-danger mb-2"><i class="bi bi-lightbulb me-2"></i>Lifesaver Tip</h6>
                 <p class="small text-secondary mb-0">Donating once can save up to three lives. Make sure to stay hydrated and rest before your appointment!</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Myths vs Facts Section -->
-    <div class="row g-4 mt-2 mb-5">
-        <div class="col-12">
-            <div class="glass-card bg-light bg-opacity-10 border-danger">
-                <h4 class="brand-font mb-4 text-center"><i class="bi bi-question-diamond text-danger me-2"></i>{% trans "Top 5 Myths vs. Facts about Blood Donation" %}</h4>
-                <div class="row g-4">
-                    {% for item in myths_vs_facts %}
-                    <div class="col-md-4 col-lg-2 {% if forloop.first %}offset-lg-1{% endif %}">
-                        <div class="myth-fact-card p-3 h-100 bg-white rounded-4 shadow-sm border-bottom border-danger border-3">
-                            <div class="text-danger small fw-bold mb-2">{% trans "MYTH" %}</div>
-                            <p class="small text-muted mb-3 italic">"{{ item.myth }}"</p>
-                            <div class="text-success small fw-bold mb-1">{% trans "FACT" %}</div>
-                            <p class="extra-small text-dark mb-0">{{ item.fact }}</p>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
             </div>
         </div>
     </div>

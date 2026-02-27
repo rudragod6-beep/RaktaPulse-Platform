@@ -1,0 +1,116 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="display-5 fw-bold text-dark mb-2">{{ title }}</h2>
+            <p class="text-muted">A transparent record of every life saved through the community's generosity.</p>
+        </div>
+        <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+            <div class="stats-badge p-3 bg-white rounded shadow-sm border-start border-4 border-danger">
+                <span class="d-block text-muted small text-uppercase fw-bold">Total Impact</span>
+                <span class="h4 fw-bold mb-0 text-danger">{{ donations.count }} Donations</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3 border-bottom border-light">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0 fw-bold">Detailed Logs</h5>
+                </div>
+                <div class="col-auto text-muted small">
+                    <i class="fas fa-info-circle me-1"></i> Showing all completed events
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4 border-0 py-3">Donor</th>
+                            <th class="border-0 py-3">Blood Group</th>
+                            <th class="border-0 py-3">Recipient/Patient</th>
+                            <th class="border-0 py-3">Location</th>
+                            <th class="border-0 py-3">Date</th>
+                            <th class="pe-4 border-0 py-3 text-end">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donation in donations %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm rounded-circle bg-danger bg-opacity-10 text-danger d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ donation.donor_user.username }}</div>
+                                        <div class="text-muted small">Verified Hero</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger rounded-pill">{{ donation.request.blood_group }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-medium text-dark">{{ donation.request.patient_name }}</div>
+                            </td>
+                            <td>
+                                <div class="text-muted">
+                                    <i class="fas fa-hospital-alt me-1 small"></i> {{ donation.request.hospital }}
+                                </div>
+                                <div class="small text-muted opacity-75">{{ donation.request.location }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-medium text-dark">{{ donation.date|date:"M d, Y" }}</div>
+                                <div class="small text-muted">{{ donation.date|time:"H:i" }}</div>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                    <i class="fas fa-check-circle me-1"></i> Completed
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <div class="mb-3">
+                                    <i class="fas fa-history fa-3x opacity-25"></i>
+                                </div>
+                                <h5>No donation history available yet.</h5>
+                                <p class="mb-0">When donations are completed, they will appear here.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4 text-center">
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<style>
+    .avatar-sm {
+        flex-shrink: 0;
+    }
+    .table th {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .table td {
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+    }
+</style>
+{% endblock %}

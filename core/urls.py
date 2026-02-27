@@ -39,4 +39,5 @@ urlpatterns = [
     path("hospitals/", views.hospital_list, name="hospital_list"),
     path("update-location/", views.update_location, name="update_location"),
     path("emergency-sms/", views.emergency_sms, name="emergency_sms"),
+    path("donation-history/", views.donation_history, name="donation_history"),
 ]

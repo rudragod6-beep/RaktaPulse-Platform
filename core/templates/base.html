@@ -38,6 +38,16 @@
             overflow-x: hidden;
         }
 
+        /* Remove blue underline from links */
+        a {
+            text-decoration: none !important;
+            color: inherit;
+        }
+        
+        a:hover {
+            color: var(--pulse-red);
+        }
+
         @keyframes blink {
             0% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.6; transform: scale(1.1); }
@@ -63,13 +73,14 @@
         #sidebar {
             width: var(--sidebar-width);
             background: var(--sidebar-bg);
-            min-height: 100vh;
+            height: 100vh;
             position: fixed;
             left: 0;
             top: 0;
             z-index: 1000;
             border-right: 1px solid var(--border-color);
             transition: all 0.3s;
+            overflow-y: auto;
         }
 
         #sidebar.collapsed {

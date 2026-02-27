@@ -479,6 +479,17 @@ def request_blood(request):
     return render(request, 'core/request_blood.html', context)
 
 @login_required
+def donation_history(request):
+    """View to display the full history of completed donations."""
+    completed_donations = DonationEvent.objects.filter(is_completed=True).select_related('donor_user', 'request').order_by('-date')
+    
+    context = {
+        'donations': completed_donations,
+        'title': 'Donation History & Lives Saved'
+    }
+    return render(request, 'core/donation_history.html', context)
+
+@login_required
 @login_required
 def vaccination_dashboard(request):
     records = VaccineRecord.objects.filter(user=request.user).order_by('-date_taken')
