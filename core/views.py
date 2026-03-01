@@ -172,13 +172,39 @@ def delete_personal_info(request):
     profile.phone = ""
     profile.birth_date = None
     profile.profile_pic = None
-    # We keep blood_group as it's often essential for the app's functionality (blood donation)
-    # but we can clear it if the user really wants to. 
-    # For now, let's just clear the "soft" personal info.
     profile.save()
+    
+    # If they have a donor profile, clear that too (or keep it but mark unavailable)
+    if hasattr(user, 'donor_profile'):
+        donor = user.donor_profile
+        donor.phone = ""
+        donor.location = ""
+        donor.save()
     
     messages.success(request, "Your non-essential personal information has been cleared.")
     return redirect('profile')
+
+@login_required
+@require_POST
+def delete_messages(request, username):
+    """Delete all messages between the current user and another user."""
+    other_user = User.objects.get(username=username)
+    Message.objects.filter(
+        (Q(sender=request.user) & Q(receiver=other_user)) |
+        (Q(sender=other_user) & Q(receiver=request.user))
+    ).delete()
+    messages.success(request, f"Conversation with {username} has been deleted.")
+    return redirect('inbox')
+
+@login_required
+@require_POST
+def delete_account(request):
+    """Delete the user's account and all associated data."""
+    user = request.user
+    logout(request) # Logout before deleting to clear session
+    user.delete()
+    messages.success(request, "Your account and all associated data have been permanently deleted.")
+    return redirect('welcome')
 
 def haversine(lat1, lon1, lat2, lon2):
     # Radius of the Earth in km
@@ -244,7 +270,7 @@ def home(request):
     # Ensure default badges exist
     if Badge.objects.count() == 0:
         Badge.objects.create(name='First-Time Donor', description='Completed your first donation!', icon_class='fas fa-award')
-        Badge.objects.create(name='Community Hero', description='Completed 5 donations!', icon_class='fas fa-medal')
+        Badge.objects.create(name='Community Champion', description='Completed 5 donations!', icon_class='fas fa-medal')
         Badge.objects.create(name='Life Saver', description='Completed 10+ donations!', icon_class='fas fa-heart')
 
     donors = Donor.objects.all()
@@ -285,9 +311,9 @@ def home(request):
     actual_completed = DonationEvent.objects.filter(is_completed=True).count()
     completed_donations = actual_completed + demo_donations
 
-    # Find Recent Heroes (Last 24 Hours)
+    # Find Recent Contributions (Last 24 Hours)
     last_24_hours = timezone.now() - timezone.timedelta(hours=24)
-    recent_heroes = DonationEvent.objects.filter(
+    recent_contributions = DonationEvent.objects.filter(
         is_completed=True, 
         date__gte=last_24_hours
     ).select_related('donor').order_by('-date')
@@ -327,7 +353,7 @@ def home(request):
         "blood_banks": blood_banks,
         "blood_groups": [g[0] for g in BLOOD_GROUPS],
         "stats": stats,
-        "recent_heroes": recent_heroes,
+        "recent_contributions": recent_contributions,
         "project_name": "RaktaPulse",
         "current_time": timezone.now(),
         "myths_vs_facts": myths_vs_facts,
@@ -378,6 +404,15 @@ def donor_list(request):
     else:
         donor_list_data.sort(key=lambda x: (-x.is_verified, x.name))
     
+    # Check 90-day availability
+    for d in donor_list_data:
+        if d.last_donation_date:
+            days_since = (timezone.now().date() - d.last_donation_date).days
+            if days_since < 90:
+                d.is_available = False
+                d.on_break = True
+                d.days_remaining = 90 - days_since
+
     context = {
         'donors': donor_list_data,
         'blood_groups': [g[0] for g in BLOOD_GROUPS],
@@ -391,9 +426,22 @@ def blood_request_list(request):
         requests = requests.filter(status=status)
     
     requests = requests.order_by('-created_at')
+    
+    can_volunteer = True
+    days_until_eligible = 0
+    if request.user.is_authenticated:
+        donor_profile = getattr(request.user, 'donor_profile', None)
+        if donor_profile and donor_profile.last_donation_date:
+            days_since = (timezone.now().date() - donor_profile.last_donation_date).days
+            if days_since < 90:
+                can_volunteer = False
+                days_until_eligible = 90 - days_since
+
     context = {
         'requests': requests,
         'current_status': status,
+        'can_volunteer': can_volunteer,
+        'days_until_eligible': days_until_eligible,
     }
     return render(request, 'core/blood_request_list.html', context)
 
@@ -604,6 +652,14 @@ def volunteer_for_request(request, request_id):
         messages.error(request, "You need to be registered as a donor to volunteer.")
         return redirect('donor_list')
     
+    # Check for 3-month (90 days) restriction
+    if donor_profile.last_donation_date:
+        days_since_last_donation = (timezone.now().date() - donor_profile.last_donation_date).days
+        if days_since_last_donation < 90:
+            remaining_days = 90 - days_since_last_donation
+            messages.error(request, f"For your safety, you must wait 3 months (90 days) between donations. You can volunteer again in {remaining_days} days.")
+            return redirect('blood_request_list')
+    
     # Prevent requester from volunteering for their own request
     if blood_request.user == request.user:
         messages.error(request, "You cannot volunteer for your own blood request.")
@@ -642,6 +698,11 @@ def complete_donation(request, event_id):
         event.is_completed = True
         event.save()
         
+        # Update donor's last donation date
+        if event.donor:
+            event.donor.last_donation_date = timezone.now().date()
+            event.donor.save()
+        
         # Award Badges Logic
         donor_profile = event.donor_user.profile
         completed_count = DonationEvent.objects.filter(donor_user=event.donor_user, is_completed=True).count()
@@ -652,7 +713,7 @@ def complete_donation(request, event_id):
                 donor_profile.badges.add(badge)
         
         if completed_count >= 5:
-            badge = Badge.objects.filter(name='Community Hero').first()
+            badge = Badge.objects.filter(name='Community Champion').first()
             if badge:
                 donor_profile.badges.add(badge)
 

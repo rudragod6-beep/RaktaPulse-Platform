@@ -18,6 +18,8 @@ urlpatterns = [
     path("chat/<str:username>/", views.chat, name="chat"),
     path("notifications/", views.notifications_view, name="notifications"),
     path("delete-personal-info/", views.delete_personal_info, name="delete_personal_info"),
+    path("delete-messages/<str:username>/", views.delete_messages, name="delete_messages"),
+    path("delete-account/", views.delete_account, name="delete_account"),
     
     # Donor & Blood Management
     path("donors/", views.donor_list, name="donor_list"),

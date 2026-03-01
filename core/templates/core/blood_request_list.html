@@ -76,7 +76,13 @@
                                     </a>
                                 {% endif %}
                                 {% if user.is_authenticated and user.donor_profile and req.user != user %}
-                                <a href="{% url 'volunteer_for_request' req.id %}" class="btn btn-sm btn-outline-danger px-3 rounded-pill">Volunteer</a>
+                                    {% if can_volunteer %}
+                                        <a href="{% url 'volunteer_for_request' req.id %}" class="btn btn-sm btn-outline-danger px-3 rounded-pill">Volunteer</a>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-secondary px-3 rounded-pill" disabled title="Eligible to volunteer in {{ days_until_eligible }} days">
+                                            Ineligible ({{ days_until_eligible }}d)
+                                        </button>
+                                    {% endif %}
                                 {% endif %}
                                 <a href="tel:{{ req.contact_number }}" class="btn btn-sm btn-danger px-3 rounded-pill">Call</a>
                             </div>

@@ -78,8 +78,8 @@
                 </div>
                 <div class="d-flex align-items-center gap-4">
                     <div class="text-end d-none d-sm-block">
-                        <span class="badge {% if donor.is_available %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10 text-{% if donor.is_available %}success{% else %}secondary{% endif %} mb-1">
-                            {% if donor.is_available %}Available{% else %}Unavailable{% endif %}
+                        <span class="badge {% if donor.on_break %}bg-warning{% elif donor.is_available %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10 text-{% if donor.on_break %}warning{% elif donor.is_available %}success{% else %}secondary{% endif %} mb-1">
+                            {% if donor.on_break %}On Break ({{ donor.days_remaining }}d){% elif donor.is_available %}Available{% else %}Unavailable{% endif %}
                         </span>
                         <p class="mb-0 text-muted extra-small" style="font-size: 0.7rem;">Phone: {{ donor.phone }}</p>
                     </div>

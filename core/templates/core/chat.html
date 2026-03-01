@@ -115,13 +115,28 @@
                     <span class="rounded-circle bg-success" style="width: 8px; height: 8px;"></span> Online
                 </small>
             </div>
-            <div class="ms-auto d-flex gap-2">
+            <div class="ms-auto d-flex gap-2 align-items-center">
                 <button id="startAudioCall" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Audio Call">
                     <i class="bi bi-telephone-fill"></i>
                 </button>
                 <button id="startVideoCall" class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Video Call">
                     <i class="bi bi-camera-video-fill"></i>
                 </button>
+                <div class="dropdown">
+                    <button class="btn btn-link text-secondary p-0" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical fs-5"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                        <li>
+                            <form action="{% url 'delete_messages' other_user.username %}" method="POST" onsubmit="return confirm('Are you sure you want to delete all messages in this conversation?');">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
+                                    <i class="bi bi-trash"></i> Delete Conversation
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
 
