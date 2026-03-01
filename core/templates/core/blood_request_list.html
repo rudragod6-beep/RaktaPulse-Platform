@@ -11,10 +11,30 @@
         font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
-    .bg-critical { background: #FF4D4D; color: #fff; }
+    .bg-critical { background: #FF4D4D; color: #fff; box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
     .bg-urgent { background: #FFA500; color: #000; }
     .bg-normal { background: #4CAF50; color: #fff; }
+
+    .request-card {
+        border-left: 5px solid transparent !important;
+        transition: all 0.3s ease;
+    }
+    .request-card.border-critical { border-left-color: #FF4D4D !important; }
+    .request-card.border-urgent { border-left-color: #FFA500 !important; }
+    .request-card.border-normal { border-left-color: #4CAF50 !important; }
+
+    @keyframes pulse-red {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .pulse-icon {
+        animation: pulse-red 2s infinite ease-in-out;
+    }
 </style>
 
 <div class="container-fluid p-0">
@@ -32,10 +52,19 @@
         <div class="row">
             {% for req in requests %}
             <div class="col-md-6 col-xl-4 mb-4">
-                <div class="p-3 border rounded h-100 bg-light d-flex flex-column">
+                <div class="p-3 border rounded h-100 bg-light d-flex flex-column request-card border-{{ req.urgency|lower }}">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="d-flex gap-2">
-                            <span class="urgency-badge bg-{{ req.urgency|lower }}">{{ req.urgency }}</span>
+                            <span class="urgency-badge bg-{{ req.urgency|lower }}">
+                                {% if req.urgency == 'CRITICAL' %}
+                                    <i class="bi bi-exclamation-triangle-fill pulse-icon"></i>
+                                {% elif req.urgency == 'URGENT' %}
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                {% else %}
+                                    <i class="bi bi-info-circle-fill"></i>
+                                {% endif %}
+                                {{ req.urgency }}
+                            </span>
                             {% if req.status == 'Active' %}
                             <span class="badge bg-success bg-opacity-10 text-success small" style="font-size: 0.7rem;">Active</span>
                             {% else %}
@@ -76,11 +105,11 @@
                                     </a>
                                 {% endif %}
                                 {% if user.is_authenticated and user.donor_profile and req.user != user %}
-                                    {% if can_volunteer %}
+                                    {% if req.can_volunteer %}
                                         <a href="{% url 'volunteer_for_request' req.id %}" class="btn btn-sm btn-outline-danger px-3 rounded-pill">Volunteer</a>
                                     {% else %}
-                                        <button class="btn btn-sm btn-outline-secondary px-3 rounded-pill" disabled title="Eligible to volunteer in {{ days_until_eligible }} days">
-                                            Ineligible ({{ days_until_eligible }}d)
+                                        <button class="btn btn-sm btn-outline-secondary px-3 rounded-pill" disabled title="{{ req.ineligibility_reason }}">
+                                            {{ req.ineligibility_reason }}
                                         </button>
                                     {% endif %}
                                 {% endif %}

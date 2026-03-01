@@ -25,6 +25,19 @@ from .models import (
 )
 from .forms import UserUpdateForm, ProfileUpdateForm, UserRegisterForm
 
+# --- Medical Compatibility Constants ---
+
+COMPATIBILITY_MATRIX = {
+    'O-': ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'], # Universal Donor
+    'O+': ['O+', 'A+', 'B+', 'AB+'],
+    'A-': ['A-', 'A+', 'AB-', 'AB+'],
+    'A+': ['A+', 'AB+'],
+    'B-': ['B-', 'B+', 'AB-', 'AB+'],
+    'B+': ['B+', 'AB+'],
+    'AB-': ['AB-', 'AB+'],
+    'AB+': ['AB+'],
+}
+
 # --- Emergency & Location Helpers ---
 
 @login_required
@@ -347,6 +360,13 @@ def home(request):
         {"myth": "I can't donate because I have high BP.", "fact": "As long as it's within 180/100 at the time of donation, you're fine."},
     ]
 
+    # Urgency Distribution for Pie Chart
+    urgency_counts = {
+        'CRITICAL': blood_requests.filter(urgency='CRITICAL').count(),
+        'URGENT': blood_requests.filter(urgency='URGENT').count(),
+        'NORMAL': blood_requests.filter(urgency='NORMAL').count(),
+    }
+
     context = {
         "donors": donor_list_data[:15], # Increased count for scrollability
         "blood_requests": blood_requests[:6],
@@ -357,6 +377,7 @@ def home(request):
         "project_name": "RaktaPulse",
         "current_time": timezone.now(),
         "myths_vs_facts": myths_vs_facts,
+        "urgency_counts": json.dumps(urgency_counts),
     }
     
     if request.user.is_authenticated:
@@ -427,21 +448,38 @@ def blood_request_list(request):
     
     requests = requests.order_by('-created_at')
     
-    can_volunteer = True
-    days_until_eligible = 0
+    donor_profile = None
     if request.user.is_authenticated:
         donor_profile = getattr(request.user, 'donor_profile', None)
-        if donor_profile and donor_profile.last_donation_date:
-            days_since = (timezone.now().date() - donor_profile.last_donation_date).days
-            if days_since < 90:
-                can_volunteer = False
-                days_until_eligible = 90 - days_since
+        
+    for req in requests:
+        req.can_volunteer = True
+        req.ineligibility_reason = ""
+        
+        if not donor_profile:
+            req.can_volunteer = False
+            req.ineligibility_reason = "Register as donor"
+        else:
+            # Check medical compatibility
+            donor_group = donor_profile.blood_group
+            compatible_groups = COMPATIBILITY_MATRIX.get(donor_group, [])
+            
+            if req.blood_group not in compatible_groups:
+                req.can_volunteer = False
+                req.ineligibility_reason = "Incompatible"
+            
+            # Check 90 days limit
+            if donor_profile.last_donation_date:
+                days_since = (timezone.now().date() - donor_profile.last_donation_date).days
+                if days_since < 90:
+                    req.can_volunteer = False
+                    days_left = 90 - days_since
+                    req.ineligibility_reason = f"Wait {days_left}d"
+                    req.days_until_eligible = days_left
 
     context = {
         'requests': requests,
         'current_status': status,
-        'can_volunteer': can_volunteer,
-        'days_until_eligible': days_until_eligible,
     }
     return render(request, 'core/blood_request_list.html', context)
 
@@ -663,6 +701,14 @@ def volunteer_for_request(request, request_id):
     # Prevent requester from volunteering for their own request
     if blood_request.user == request.user:
         messages.error(request, "You cannot volunteer for your own blood request.")
+        return redirect('blood_request_list')
+    
+    # Check for medical compatibility
+    donor_group = donor_profile.blood_group
+    compatible_groups = COMPATIBILITY_MATRIX.get(donor_group, [])
+    
+    if blood_request.blood_group not in compatible_groups:
+        messages.error(request, f"Your blood group ({donor_group}) is not medically compatible with {blood_request.blood_group}. Only compatible donors can volunteer.")
         return redirect('blood_request_list')
     
     # Check if already volunteered

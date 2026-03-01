@@ -77,10 +77,31 @@
         font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
-    .bg-critical { background: #FF4D4D; color: #fff; }
+    .bg-critical { background: #FF4D4D; color: #fff; box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
     .bg-urgent { background: #FFA500; color: #000; }
     .bg-normal { background: #4CAF50; color: #fff; }
+
+    .request-item {
+        border-left: 4px solid transparent;
+        transition: all 0.3s ease;
+        padding-left: 12px;
+    }
+    .request-item.border-critical { border-left-color: #FF4D4D; background: rgba(255, 77, 77, 0.03); }
+    .request-item.border-urgent { border-left-color: #FFA500; background: rgba(255, 165, 0, 0.03); }
+    .request-item.border-normal { border-left-color: #4CAF50; background: rgba(76, 175, 80, 0.03); }
+
+    @keyframes pulse-red {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .pulse-icon {
+        animation: pulse-red 2s infinite ease-in-out;
+    }
 
     .progress {
         background-color: #2A2A2A;
@@ -153,7 +174,13 @@
     <!-- Welcome Header -->
     <div class="row mb-4 align-items-center">
         <div class="col-md-7">
-            <h2 class="brand-font mb-1">{% trans "RaktaPulse Community Dashboard" %}</h2>
+            <div class="d-flex align-items-center gap-3 mb-1">
+                <h2 class="brand-font mb-0">{% trans "RaktaPulse Community Dashboard" %}</h2>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 0.7rem;">
+                    <span class="d-inline-block rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
+                    SYSTEM ONLINE
+                </span>
+            </div>
             <p class="text-secondary mb-0">{% trans "Overview of blood donation activity and requirements in your area." %}</p>
         </div>
         {% if user.is_authenticated and user_badges %}
@@ -380,6 +407,14 @@
 
         <!-- Sidebar Components -->
         <div class="col-lg-4">
+            <!-- Urgency Insights (Pie Chart) -->
+            <div class="glass-card mb-4 border-bottom border-danger border-3 shadow-sm">
+                <h6 class="brand-font mb-3 text-center text-secondary uppercase small fw-bold">Urgency Distribution</h6>
+                <div style="height: 180px; width: 100%; position: relative;">
+                    <canvas id="urgencyChart"></canvas>
+                </div>
+            </div>
+
             <!-- Urgent Requests -->
             <div class="glass-card mb-4 border-start border-danger border-4">
                 <h5 class="brand-font mb-4 d-flex justify-content-between align-items-center">
@@ -396,9 +431,18 @@
 
                 <div class="request-feed">
                     {% for req in blood_requests %}
-                    <div class="mb-4 border-bottom border-light pb-3">
+                    <div class="mb-4 border-bottom border-light pb-3 request-item border-{{ req.urgency|lower }}">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="urgency-badge bg-{{ req.urgency|lower }}">{{ req.urgency }}</span>
+                            <span class="urgency-badge bg-{{ req.urgency|lower }}">
+                                {% if req.urgency == 'CRITICAL' %}
+                                    <i class="bi bi-exclamation-triangle-fill pulse-icon"></i>
+                                {% elif req.urgency == 'URGENT' %}
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                {% else %}
+                                    <i class="bi bi-info-circle-fill"></i>
+                                {% endif %}
+                                {{ req.urgency }}
+                            </span>
                             <span class="fw-bold text-danger">{{ req.blood_group }}</span>
                         </div>
                         <h6 class="mb-1 text-dark">{{ req.patient_name }}</h6>
@@ -473,7 +517,61 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Urgency Chart Implementation
+    document.addEventListener('DOMContentLoaded', function() {
+        const urgencyData = JSON.parse('{{ urgency_counts|safe }}');
+        const ctx = document.getElementById('urgencyChart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Critical', 'Urgent', 'Normal'],
+                datasets: [{
+                    data: [urgencyData.CRITICAL, urgencyData.URGENT, urgencyData.NORMAL],
+                    backgroundColor: ['#FF4D4D', '#FFA500', '#4CAF50'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 10,
+                                family: "'Inter', sans-serif"
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((context.parsed / total) * 100);
+                                    label += context.parsed + ' (' + percentage + '%)';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    });
+
     const btnList = document.getElementById('btn-list');
     const btnMap = document.getElementById('btn-map');
     const mapContainer = document.getElementById('map-container');
